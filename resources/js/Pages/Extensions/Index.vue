@@ -56,9 +56,9 @@ const deleteExtension = (id) => {
 
         <Head title="Extensions" />
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+            <h3 class="text-xl font-semibold leading-tight text-gray-800">
                 Extensions
-            </h2>
+            </h3>
         </template>
 
         <div class="py-12">

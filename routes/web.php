@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ExtensionController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
@@ -31,6 +32,15 @@ Route::middleware('auth')->group(function () {
     Route::patch('extensions/{extension}/update', [ExtensionController::class,'update'])->name('extensions.update');
     Route::get('extensions/{extension}', [ExtensionController::class,'show'])->name('extensions.show');
     Route::delete('extensions/{extension}', [ExtensionController::class,'destroy'])->name('extensions.destroy');
+
+    Route::get('campaigns', [CampaignController::class,'index'])->name('campaigns.index');
+    Route::get('campaigns/create', [CampaignController::class,'create'])->name('campaigns.create');
+    Route::post('campaigns', [CampaignController::class,'store'])->name('campaigns.store');
+    Route::get('campaigns/{campaign}', [CampaignController::class,'show'])->name('campaigns.show');
+    Route::get('campaigns/{campaign}/edit', [CampaignController::class,'edit'])->name('campaigns.edit');
+    Route::patch('campaigns/{campaign}/update', [CampaignController::class,'update'])->name('campaigns.update');
+    Route::delete('campaigns/{campaign}', [CampaignController::class,'destroy'])->name('campaigns.destroy');
+    Route::delete('campaign_contacts/{contact}', [CampaignController::class,'destroyContact'])->name('campaign_contacts.destroy');
 
     // Route::resource('extensions', ExtensionController::class);
 });

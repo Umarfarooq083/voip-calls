@@ -27,7 +27,16 @@ const form = useForm({
     ivr_id: props.campaign?.ivr_id || '',
     ivr_name: props.campaign?.ivr_name || '',   
     notes: props.campaign?.notes || '',
+    csv_file: null,
 });
+
+const selectedFile = ref('');
+const handleFileChange = (event) => {
+    if (event.target.files && event.target.files[0]) {
+        form.csv_file = event.target.files[0];
+        selectedFile.value = event.target.files[0].name;
+    }
+};
 
 watch(() => form.ivr_id, (newValue) => {
     const ivr = props.campaign.ivrs.find(item => item.id == newValue);
@@ -36,7 +45,8 @@ watch(() => form.ivr_id, (newValue) => {
 
 
 const submit = () => {
-    router.patch(route('campaigns.update', { campaign: props.campaign?.id }), form, {
+    form.post(route('campaigns.update', { campaign: props.campaign?.id }), {
+        method: 'PATCH',
         onSuccess: () => {
             router.visit(route('campaigns.index'), {
                 replace: true,
@@ -104,6 +114,26 @@ const submit = () => {
                             <div v-if="props.errors.notes" class="mt-1 text-sm text-red-600">
                                 {{ props.errors.notes }}
                             </div>
+                        </div>
+
+                        <div>
+                            <label for="csv_file" class="block text-sm font-medium text-gray-700">CSV File (phone_number)</label>
+                            <input
+                                @change="handleFileChange"
+                                type="file"
+                                id="csv_file"
+                                accept=".csv,.txt"
+                                class="mt-1 block w-full"
+                            />
+                            <div v-if="selectedFile" class="mt-1 text-sm text-gray-600">
+                                Selected: {{ selectedFile }}
+                            </div>
+                            <div v-if="props.errors.csv_file" class="mt-1 text-sm text-red-600">
+                                {{ props.errors.csv_file }}
+                            </div>
+                            <p class="mt-1 text-sm text-gray-500">
+                                CSV format: phone_number (one contact per line). customer_name column is optional.
+                            </p>
                         </div>
 
                         <div class="flex justify-end space-x-3">

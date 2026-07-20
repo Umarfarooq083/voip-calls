@@ -37,7 +37,15 @@ class CampaignService
     public function update(Campaign $campaign, array $data): Campaign
     {
         return DB::transaction(function () use ($campaign, $data) {
-            $campaign->update($data);
+            $updateData = array_filter($data, function ($key) {
+                return $key !== 'csv_file';
+            }, ARRAY_FILTER_USE_KEY);
+
+            if (isset($data['csv_file'])) {
+                $this->importContactsFromCsv($campaign, $data['csv_file']);
+            }
+
+            $campaign->update($updateData);
 
             return $campaign->fresh();
         });
@@ -78,6 +86,7 @@ class CampaignService
 
     public function importContactsFromCsv(Campaign $campaign, $file): void
     {
+        CampaignContact::where('campaign_id', $campaign->id)->delete();
         $path = $file->getRealPath();
         $fileHandle = fopen($path, 'r');
 

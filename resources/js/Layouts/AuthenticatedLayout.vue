@@ -45,6 +45,12 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Extensions
                                 </NavLink>
+                                <NavLink
+                                    :href="route('campaigns.index')"
+                                    :active="route().current('campaigns.index')"
+                                >
+                                    Campaign
+                                </NavLink>
                             </div>
                         </div>
 

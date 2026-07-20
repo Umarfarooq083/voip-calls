@@ -3,7 +3,9 @@
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ExtensionController;
 use App\Http\Controllers\ProfileController;
+use App\Services\AmiService;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -42,7 +44,38 @@ Route::middleware('auth')->group(function () {
     Route::delete('campaigns/{campaign}', [CampaignController::class,'destroy'])->name('campaigns.destroy');
     Route::delete('campaign_contacts/{contact}', [CampaignController::class,'destroyContact'])->name('campaign_contacts.destroy');
 
-    // Route::resource('extensions', ExtensionController::class);
+    Route::get('ami/test', function (AmiService $service) {
+        $connected = $service->connect();
+
+        return response()->json([
+            'connected' => $connected,
+            'host' => config('ami.host'),
+            'port' => config('ami.port'),
+            'username' => config('ami.username'),
+        ]);
+    })->name('ami.test');
+
+    Route::get('ami/ping', function (AmiService $service) {
+        $result = $service->ping();
+
+        return response()->json([
+            'success' => $result,
+        ]);
+    })->name('ami.ping');
+
+    // get ivr using this end point 
+    Route::get('/test-asterisk-db', function () {
+
+    $ivrs = DB::connection('asterisk')
+        ->table('ivr_details')
+        ->get();
+
+    return response()->json($ivrs);
+
+});
+
+
+
 });
 
 require __DIR__.'/auth.php';

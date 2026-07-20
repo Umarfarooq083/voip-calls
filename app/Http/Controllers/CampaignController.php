@@ -95,6 +95,7 @@ class CampaignController extends Controller
             'campaign' => [
                 'id' => $campaign->id,
                 'name' => $campaign->name,
+                'no_of_calls' => $campaign->no_of_calls,
                 'ivr_id' => $campaign->ivr_id,
                 'ivr_name' => $campaign->ivr_name,
                 'ivrs' => $ivrs,

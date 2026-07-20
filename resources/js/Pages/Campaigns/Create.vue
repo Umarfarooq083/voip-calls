@@ -22,6 +22,7 @@ const props = defineProps({
 const form = useForm({
     name: '',
     ivr_id: '',
+    no_of_calls: 10,
     ivr_name: '',
     voice_message_id: '',
     csv_file: null,
@@ -64,6 +65,19 @@ const handleFileChange = (event) => {
                             />
                             <div v-if="props.errors.name" class="mt-1 text-sm text-red-600">
                                 {{ props.errors.name }}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="no_of_calls" class="block text-sm font-medium text-gray-700">NO OF CALLS</label>
+                            <input
+                                v-model="form.no_of_calls"
+                                type="number"
+                                id="no_of_calls"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <div v-if="props.errors.no_of_calls" class="mt-1 text-sm text-red-600">
+                                {{ props.errors.no_of_calls }}
                             </div>
                         </div>
 

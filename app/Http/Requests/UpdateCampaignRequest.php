@@ -20,6 +20,7 @@ class UpdateCampaignRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'ivr_id' => ['required'],
             'ivr_name' => ['required'],
+            'no_of_calls' => ['required', 'integer', 'min:1'],
             'csv_file' => ['nullable', 'file', 'mimes:csv,txt', 'max:10240'],
         ];
     }

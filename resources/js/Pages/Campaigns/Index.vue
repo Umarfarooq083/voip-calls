@@ -106,6 +106,10 @@ const getStatusBadgeClass = (status) => {
                                 </th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    NO OF CALLS
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     IVR
                                 </th>
                                 <th
@@ -126,6 +130,9 @@ const getStatusBadgeClass = (status) => {
                             <tr v-for="campaign in campaigns" :key="campaign.id">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ campaign.name }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ campaign.no_of_calls }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ campaign?.ivr_name || 'N/A' }}

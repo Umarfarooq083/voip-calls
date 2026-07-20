@@ -24,9 +24,9 @@ const props = defineProps({
 
 const form = useForm({
     name: props.campaign?.name || '',
+    no_of_calls: props.campaign?.no_of_calls,
     ivr_id: props.campaign?.ivr_id || '',
     ivr_name: props.campaign?.ivr_name || '',   
-    notes: props.campaign?.notes || '',
     csv_file: null,
 });
 
@@ -81,6 +81,18 @@ const submit = () => {
                                 {{ props.errors.name }}
                             </div>
                         </div>
+                        <div>
+                            <label for="no_of_calls" class="block text-sm font-medium text-gray-700">Number of Calls</label>
+                            <input
+                                v-model="form.no_of_calls"
+                                type="text"
+                                id="no_of_calls"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                            <div v-if="props.errors.no_of_calls" class="mt-1 text-sm text-red-600">
+                                {{ props.errors.no_of_calls }}
+                            </div>
+                        </div>
                         
                         <div>
                             <label for="ivr_id" class="block text-sm font-medium text-gray-700">IVR</label>
@@ -102,20 +114,6 @@ const submit = () => {
 
 
                         </div>
-
-                        <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
-                            <textarea
-                                v-model="form.notes"
-                                id="notes"
-                                rows="3"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            ></textarea>
-                            <div v-if="props.errors.notes" class="mt-1 text-sm text-red-600">
-                                {{ props.errors.notes }}
-                            </div>
-                        </div>
-
                         <div>
                             <label for="csv_file" class="block text-sm font-medium text-gray-700">CSV File (phone_number)</label>
                             <input

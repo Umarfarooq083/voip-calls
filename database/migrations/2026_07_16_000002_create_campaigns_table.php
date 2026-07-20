@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->integer('ivr_id');
             $table->string('ivr_name')->nullable();
+            $table->integer('no_of_calls');
             $table->foreignId('voice_message_id')->nullable()->constrained('voice_messages')->onDelete('set null');
             $table->enum('status', ['pending', 'in_progress', 'completed', 'paused', 'cancelled'])->default('pending');
             $table->integer('total_contacts')->default(0);

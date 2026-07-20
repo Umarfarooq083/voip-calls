@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router,useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref,watch } from 'vue';
 
 const props = defineProps({
     campaign: {
@@ -16,11 +16,7 @@ const props = defineProps({
         type: String,
         default: '',
     },
-    voiceMessages: {
-        type: Array,
-        default: () => [],
-    },
-    extensions: {
+    ivrs: {
         type: Array,
         default: () => [],
     },
@@ -28,10 +24,16 @@ const props = defineProps({
 
 const form = useForm({
     name: props.campaign?.name || '',
-    extension_id: props.campaign?.extension_id || '',
-    voice_message_id: props.campaign?.voice_message_id || '',
+    ivr_id: props.campaign?.ivr_id || '',
+    ivr_name: props.campaign?.ivr_name || '',   
     notes: props.campaign?.notes || '',
 });
+
+watch(() => form.ivr_id, (newValue) => {
+    const ivr = props.campaign.ivrs.find(item => item.id == newValue);
+    form.ivr_name = ivr ? ivr.name : '';
+});
+
 
 const submit = () => {
     router.patch(route('campaigns.update', { campaign: props.campaign?.id }), form, {
@@ -69,39 +71,26 @@ const submit = () => {
                                 {{ props.errors.name }}
                             </div>
                         </div>
-
+                        
                         <div>
-                            <label for="extension_id" class="block text-sm font-medium text-gray-700">Extension</label>
+                            <label for="ivr_id" class="block text-sm font-medium text-gray-700">IVR</label>
                             <select
-                                v-model="form.extension_id"
-                                id="extension_id"
+                                v-model="form.ivr_id"
+                                id="ivr_id"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
-                                <option value="">Select Extension</option>
-                                <option v-for="extension in props.extensions" :key="extension.id" :value="extension.id">
-                                    {{ extension.name }} ({{ extension.extension }})
+                                <option value="">Select an IVR</option>
+                                <option v-for="ivr in props?.campaign?.ivrs" :key="ivr.id" :value="ivr.id">
+                                    {{ ivr?.name}} 
                                 </option>
                             </select>
-                            <div v-if="props.errors.extension_id" class="mt-1 text-sm text-red-600">
-                                {{ props.errors.extension_id }}
+                            <div v-if="props.errors.ivr_id" class="mt-1 text-sm text-red-600">
+                                {{ props.errors.ivr_id }}
                             </div>
-                        </div>
 
-                        <div>
-                            <label for="voice_message_id" class="block text-sm font-medium text-gray-700">Voice Message</label>
-                            <select
-                                v-model="form.voice_message_id"
-                                id="voice_message_id"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            >
-                                <option value="">No Voice Message</option>
-                                <option v-for="voiceMessage in props.voiceMessages" :key="voiceMessage.id" :value="voiceMessage.id">
-                                    {{ voiceMessage.name }}
-                                </option>
-                            </select>
-                            <div v-if="props.errors.voice_message_id" class="mt-1 text-sm text-red-600">
-                                {{ props.errors.voice_message_id }}
-                            </div>
+                        <input type="hidden" v-model="form.ivr_name">
+
+
                         </div>
 
                         <div>

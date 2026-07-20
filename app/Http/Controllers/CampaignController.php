@@ -9,6 +9,7 @@ use App\Models\CampaignContact;
 use App\Services\CampaignService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
@@ -23,7 +24,6 @@ class CampaignController extends Controller
         $filters = $request->only(['status', 'search']);
 
         $campaigns = app(CampaignService::class)->list($filters);
-
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns->items(),
             'filters' => $filters,
@@ -34,10 +34,8 @@ class CampaignController extends Controller
                 'total' => $campaigns->total(),
             ],
             'links' => [
-                'first' => $campaigns->url(1),
-                'last' => $campaigns->url($campaigns->lastPage()),
-                'prev' => $campaigns->url($campaigns->currentPage() - 1),
-                'next' => $campaigns->url($campaigns->currentPage() + 1),
+                'prev' => $campaigns->currentPage() > 1 ? $campaigns->url($campaigns->currentPage() - 1) : null,
+                'next' => $campaigns->currentPage() < $campaigns->lastPage() ? $campaigns->url($campaigns->currentPage() + 1) : null,
             ],
             'success' => session('success'),
         ]);
@@ -45,12 +43,13 @@ class CampaignController extends Controller
 
     public function create()
     {
-        $voiceMessages = app(CampaignService::class)->getVoiceMessages();
         $extensions = app(CampaignService::class)->getExtensions();
-
+        $ivrs = DB::connection('asterisk')
+        ->table('ivr_details')
+        ->get();
         return Inertia::render('Campaigns/Create', [
-            'voiceMessages' => $voiceMessages,
             'extensions' => $extensions,
+            'ivrs' => $ivrs,
         ]);
     }
 
@@ -88,19 +87,18 @@ class CampaignController extends Controller
 
     public function edit(Campaign $campaign)
     {
-        $voiceMessages = app(CampaignService::class)->getVoiceMessages();
-        $extensions = app(CampaignService::class)->getExtensions();
-
+        $ivrs = DB::connection('asterisk')
+        ->table('ivr_details')
+        ->get();
+        // dd($ivrs);
         return Inertia::render('Campaigns/Edit', [
             'campaign' => [
                 'id' => $campaign->id,
                 'name' => $campaign->name,
-                'extension_id' => $campaign->extension_id,
-                'voice_message_id' => $campaign->voice_message_id,
+                'ivr_id' => $campaign->ivr_id,
+                'ivrs' => $ivrs,
                 'notes' => $campaign->notes,
             ],
-            'voiceMessages' => $voiceMessages,
-            'extensions' => $extensions,
         ]);
     }
 

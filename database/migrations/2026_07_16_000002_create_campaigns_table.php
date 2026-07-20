@@ -11,7 +11,8 @@ return new class extends Migration
         Schema::create('campaigns', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('extension_id')->constrained('extensions')->onDelete('cascade');
+            $table->integer('ivr_id');
+            $table->string('ivr_name')->nullable();
             $table->foreignId('voice_message_id')->nullable()->constrained('voice_messages')->onDelete('set null');
             $table->enum('status', ['pending', 'in_progress', 'completed', 'paused', 'cancelled'])->default('pending');
             $table->integer('total_contacts')->default(0);

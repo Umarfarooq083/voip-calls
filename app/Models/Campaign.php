@@ -12,7 +12,8 @@ class Campaign extends Model
 
     protected $fillable = [
         'name',
-        'extension_id',
+        'ivr_id',
+        'ivr_name',
         'voice_message_id',
         'status',
         'total_contacts',

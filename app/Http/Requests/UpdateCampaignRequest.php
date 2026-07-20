@@ -18,8 +18,8 @@ class UpdateCampaignRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'extension_id' => ['required', 'exists:extensions,id'],
-            'voice_message_id' => ['nullable', 'exists:voice_messages,id'],
+            'ivr_id' => ['required'],
+            'ivr_name' => ['required'],
         ];
     }
 
@@ -27,7 +27,7 @@ class UpdateCampaignRequest extends FormRequest
     {
         return [
             'name.required' => 'Campaign name is required.',
-            'extension_id.required' => 'Extension is required.',
+            'ivr_id.required' => 'IVR is required.',
         ];
     }
 }

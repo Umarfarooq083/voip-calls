@@ -28,6 +28,7 @@ const props = defineProps({
 
 const { filters } = toRefs(props);
 const search = ref(filters.value?.search || '');
+let timer = null;
 
 const handleSearch = () => {
     clearTimeout(timer);
@@ -69,7 +70,6 @@ const getStatusBadgeClass = (status) => {
                 Campaigns
             </h3>
         </template>
-
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div class="mb-6 flex justify-between items-center">
@@ -106,11 +106,7 @@ const getStatusBadgeClass = (status) => {
                                 </th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Extension
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Voice Message
+                                    IVR
                                 </th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -132,11 +128,9 @@ const getStatusBadgeClass = (status) => {
                                     {{ campaign.name }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ campaign.extension?.name || 'N/A' }}
+                                    {{ campaign?.ivr_name || 'N/A' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ campaign.voice_message?.name || 'N/A' }}
-                                </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ campaign.total_contacts }} contacts
                                 </td>

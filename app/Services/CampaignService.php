@@ -16,7 +16,8 @@ class CampaignService
         return DB::transaction(function () use ($data) {
             $campaign = Campaign::create([
                 'name' => $data['name'],
-                'extension_id' => $data['extension_id'],
+                'ivr_id' => $data['ivr_id'],
+                'ivr_name' => $data['ivr_name'],
                 'voice_message_id' => $data['voice_message_id'] ?? null,
                 'status' => 'pending',
                 'total_contacts' => 0,
@@ -51,7 +52,7 @@ class CampaignService
         });
     }
 
-    public function list(array $filters = []): LengthAwarePaginator
+    public function list(array $filters = [])
     {
         $query = Campaign::query();
 
@@ -65,9 +66,9 @@ class CampaignService
             });
         }
 
-        return $query->with(['extension', 'voiceMessage', 'contacts'])
+        return $query->with(['extension', 'contacts'])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate(10);
     }
 
     public function find(int $id): ?Campaign
@@ -104,7 +105,7 @@ class CampaignService
                 }
             }
 
-            if (!empty($customerName) && !empty($phoneNumber)) {
+            if (!empty($phoneNumber)) {
                 CampaignContact::create([
                     'campaign_id' => $campaign->id,
                     'customer_name' => $customerName,

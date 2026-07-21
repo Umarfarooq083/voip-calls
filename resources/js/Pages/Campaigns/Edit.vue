@@ -20,6 +20,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    trunks: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const form = useForm({
@@ -27,6 +31,7 @@ const form = useForm({
     no_of_calls: props.campaign?.no_of_calls,
     ivr_id: props.campaign?.ivr_id || '',
     ivr_name: props.campaign?.ivr_name || '',   
+    trunk_channalId: props.campaign?.trunk_channalId || '',
     csv_file: null,
 });
 
@@ -66,6 +71,7 @@ const submit = () => {
         </template>
 
         <div class="py-12">
+           
             <div class="mx-auto max-w-2xl sm:px-6 lg:px-8">
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <form @submit.prevent="submit" class="p-6 space-y-6">
@@ -111,9 +117,26 @@ const submit = () => {
                             </div>
 
                         <input type="hidden" v-model="form.ivr_name">
-
-
                         </div>
+
+                        <div>
+                            <label for="trunk_channalId" class="block text-sm font-medium text-gray-700">Trunk</label>
+                            <select
+                                v-model="form.trunk_channalId"
+                                id="trunk_channalId"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                                <option value="">Select an Trunk</option>
+                                <option v-for="trunk in props.campaign.trunks" :key="trunk.channelid" :value="trunk.channelid">
+                                    {{ trunk.channelid}} 
+                                </option>
+                            </select>
+                            <div v-if="props.errors.trunk_channalId" class="mt-1 text-sm text-red-600">
+                                {{ props.errors.trunk_channalId }}
+                            </div>
+                        </div>
+
+
                         <div>
                             <label for="csv_file" class="block text-sm font-medium text-gray-700">CSV File (phone_number)</label>
                             <input

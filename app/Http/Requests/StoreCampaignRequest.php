@@ -18,6 +18,7 @@ class StoreCampaignRequest extends FormRequest
             'ivr_id' => ['required'],
             'no_of_calls' => ['required', 'integer', 'min:1', 'max:100000'],
             'ivr_name' => ['required'],
+            'trunk_channalId' => ['required'],
             'voice_message_id' => ['nullable', 'exists:voice_messages,id'],
             'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
         ];

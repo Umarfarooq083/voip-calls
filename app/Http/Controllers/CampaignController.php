@@ -6,12 +6,15 @@ use App\Http\Requests\StoreCampaignRequest;
 use App\Http\Requests\UpdateCampaignRequest;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
+use App\Services\AmiService;
 use App\Services\CampaignService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
 
 class CampaignController extends Controller
 {
@@ -47,9 +50,15 @@ class CampaignController extends Controller
         $ivrs = DB::connection('asterisk')
         ->table('ivr_details')
         ->get();
+
+        $trunks = DB::connection('asterisk')
+        ->table('trunks')
+        ->get();
+
         return Inertia::render('Campaigns/Create', [
             'extensions' => $extensions,
             'ivrs' => $ivrs,
+            'trunks' => $trunks,
         ]);
     }
 
@@ -90,6 +99,12 @@ class CampaignController extends Controller
         $ivrs = DB::connection('asterisk')
         ->table('ivr_details')
         ->get();
+
+        //  dd($campaign->trunk_channalId);
+        $trunks = DB::connection('asterisk')
+        ->table('trunks')
+        ->get();
+
         // dd($ivrs);
         return Inertia::render('Campaigns/Edit', [
             'campaign' => [
@@ -99,6 +114,8 @@ class CampaignController extends Controller
                 'ivr_id' => $campaign->ivr_id,
                 'ivr_name' => $campaign->ivr_name,
                 'ivrs' => $ivrs,
+                'trunks' => $trunks,
+                'trunk_channalId' => $campaign->trunk_channalId,
                 'notes' => $campaign->notes,
             ],
         ]);
@@ -127,5 +144,37 @@ class CampaignController extends Controller
 
         return Redirect::route('campaigns.show', $campaignId)
             ->with('success', 'Contact deleted successfully.');
+    }
+
+    public function startCalling(Campaign $campaign)
+    {
+        $CampaignContact = CampaignContact::where('campaign_id', $campaign->id)->get();
+        foreach ($CampaignContact as $number) {
+            $source = $campaign->trunk_channalId;
+            $destination = '0'.$number->phone_number;     
+            $callId = (string) Str::uuid();
+            $result = app(AmiService::class)->originateCall([
+                'channel'   => "SIP/{$source}/{$destination}",
+                'context'   => 'ivr-' . $campaign->ivr_id,
+                'extension' => 's',
+                'priority'  => 1,
+                'caller_id' => $number->phone_number,
+                'async'     => true,
+                'variables' => [
+                    'CALL_UUID'   => $callId,
+                    'CAMPAIGN_ID' => $campaign->id,
+                    'CONTACT_ID'  => $number->id,
+                    'PHONE'       => $destination,
+                ],
+            ]);
+
+        Log::info("AMI Result", [
+            'number' => $destination,
+            'response' => $result
+        ]);
+    
+        }
+   
+        // return Redirect::route('campaigns.index')->with('success', 'Campaign started successfully.');
     }
 }

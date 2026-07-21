@@ -17,6 +17,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    trunks: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const form = useForm({
@@ -24,6 +28,7 @@ const form = useForm({
     ivr_id: '',
     no_of_calls: 10,
     ivr_name: '',
+    trunk_channalId: '',
     voice_message_id: '',
     csv_file: null,
 });
@@ -98,8 +103,23 @@ const handleFileChange = (event) => {
                             </div>
 
                         <input type="hidden" v-model="form.ivr_name">
+                        </div>
 
-
+                        <div>
+                            <label for="trunk_channalId" class="block text-sm font-medium text-gray-700">Trunk</label>
+                            <select
+                                v-model="form.trunk_channalId"
+                                id="trunk_channalId"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                                <option value="">Select an Trunk</option>
+                                <option v-for="trunk in props.trunks" :key="trunk.channelid" :value="trunk.channelid">
+                                    {{ trunk.channelid}} 
+                                </option>
+                            </select>
+                            <div v-if="props.errors.trunk_channalId" class="mt-1 text-sm text-red-600">
+                                {{ props.errors.trunk_channalId }}
+                            </div>
                         </div>
 
                         <div>

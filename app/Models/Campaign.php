@@ -15,6 +15,7 @@ class Campaign extends Model
         'ivr_id',
         'ivr_name',
         'no_of_calls',
+        'trunk_channalId',
         'voice_message_id',
         'status',
         'total_contacts',

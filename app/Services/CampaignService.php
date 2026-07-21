@@ -18,6 +18,7 @@ class CampaignService
                 'name' => $data['name'],
                 'ivr_id' => $data['ivr_id'],
                 'ivr_name' => $data['ivr_name'],
+                'trunk_channalId' => $data['trunk_channalId'],
                 'no_of_calls' => $data['no_of_calls'],
                 'voice_message_id' => $data['voice_message_id'] ?? null,
                 'status' => 'pending',

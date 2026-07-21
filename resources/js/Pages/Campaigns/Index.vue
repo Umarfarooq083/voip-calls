@@ -110,6 +110,10 @@ const getStatusBadgeClass = (status) => {
                                 </th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Sip Trunk
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     IVR
                                 </th>
                                 <th
@@ -135,9 +139,11 @@ const getStatusBadgeClass = (status) => {
                                     {{ campaign.no_of_calls }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ campaign?.ivr_name || 'N/A' }}
+                                    {{ campaign?.trunk_channalId }}
                                 </td>
-                                
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ campaign?.ivr_name || 'N/A' }}
+                                </td> 
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ campaign.total_contacts }} contacts
                                 </td>
@@ -148,6 +154,10 @@ const getStatusBadgeClass = (status) => {
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
+                                    <Link :href="route('campaigns.startcalling', { campaign: campaign.id })"
+                                        class="hover:underline mr-4">
+                                        Start Calling
+                                    </Link>
                                     <Link :href="route('campaigns.edit', { campaign: campaign.id })"
                                         class="hover:underline mr-4">
                                         Edit

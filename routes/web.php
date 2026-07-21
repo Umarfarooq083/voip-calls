@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::post('campaigns', [CampaignController::class,'store'])->name('campaigns.store');
     Route::get('campaigns/{campaign}', [CampaignController::class,'show'])->name('campaigns.show');
     Route::get('campaigns/{campaign}/edit', [CampaignController::class,'edit'])->name('campaigns.edit');
+    Route::get('campaigns/{campaign}/start-calling', [CampaignController::class,'startCalling'])->name('campaigns.startcalling');
     Route::post('campaigns/{campaign}/update', [CampaignController::class,'update'])->name('campaigns.update');
     Route::delete('campaigns/{campaign}', [CampaignController::class,'destroy'])->name('campaigns.destroy');
     Route::delete('campaign_contacts/{contact}', [CampaignController::class,'destroyContact'])->name('campaign_contacts.destroy');

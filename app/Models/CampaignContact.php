@@ -14,6 +14,8 @@ class CampaignContact extends Model
         'customer_name',
         'phone_number',
         'status',
+        'call_uuid',
+        'channel',
         'called_at',
         'notes',
     ];
@@ -21,6 +23,10 @@ class CampaignContact extends Model
     protected $casts = [
         'status' => 'string',
         'called_at' => 'datetime',
+    ];
+
+    protected $attributes = [
+        'status' => 'pending',
     ];
 
     public function campaign()
@@ -33,9 +39,39 @@ class CampaignContact extends Model
         return $query->where('status', 'pending');
     }
 
-    public function scopeCalled($query)
+    public function scopeCalling($query)
     {
-        return $query->where('status', 'called');
+        return $query->where('status', 'calling');
+    }
+
+    public function scopeCallingRinging($query)
+    {
+        return $query->where('status', 'calling_ringing');
+    }
+
+    public function scopeAttended($query)
+    {
+        return $query->where('status', 'attended');
+    }
+
+    public function scopePressed1($query)
+    {
+        return $query->where('status', '1_pressed');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'rejected');
+    }
+
+    public function scopeNotAnswered($query)
+    {
+        return $query->where('status', 'not_answered');
+    }
+
+    public function scopeSuccess($query)
+    {
+        return $query->where('status', 'success');
     }
 
     public function scopeSuccessful($query)
@@ -51,5 +87,15 @@ class CampaignContact extends Model
     public function scopeSkipped($query)
     {
         return $query->where('status', 'skipped');
+    }
+
+    public function scopeQueued($query)
+    {
+        return $query->where('status', 'queued');
+    }
+
+    public function scopeTerminal($query)
+    {
+        return $query->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped']);
     }
 }

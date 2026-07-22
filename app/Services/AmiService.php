@@ -360,10 +360,10 @@ class AmiService
                 $response['Response'] === 'Success'
             ) {
 
-                Log::info('AMI Originate Success', [
-                    'channel' => $params['channel'],
-                    'extension' => $params['extension'] ?? '',
-                ]);
+                // Log::info('AMI Originate Success', [
+                //     'channel' => $params['channel'],
+                //     'extension' => $params['extension'] ?? '',
+                // ]);
 
                 return true;
             }

@@ -4,29 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCampaignRequest;
 use App\Http\Requests\UpdateCampaignRequest;
+use App\Jobs\ProcessCampaignCall;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
-use App\Services\AmiService;
 use App\Services\CampaignService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
-use Illuminate\Support\Str;
 
 class CampaignController extends Controller
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function index(Request $request)
     {
         $filters = $request->only(['status', 'search']);
 
         $campaigns = app(CampaignService::class)->list($filters);
+
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns->items(),
             'filters' => $filters,
@@ -48,12 +46,12 @@ class CampaignController extends Controller
     {
         $extensions = app(CampaignService::class)->getExtensions();
         $ivrs = DB::connection('asterisk')
-        ->table('ivr_details')
-        ->get();
+            ->table('ivr_details')
+            ->get();
 
         $trunks = DB::connection('asterisk')
-        ->table('trunks')
-        ->get();
+            ->table('trunks')
+            ->get();
 
         return Inertia::render('Campaigns/Create', [
             'extensions' => $extensions,
@@ -97,13 +95,13 @@ class CampaignController extends Controller
     public function edit(Campaign $campaign)
     {
         $ivrs = DB::connection('asterisk')
-        ->table('ivr_details')
-        ->get();
+            ->table('ivr_details')
+            ->get();
 
         //  dd($campaign->trunk_channalId);
         $trunks = DB::connection('asterisk')
-        ->table('trunks')
-        ->get();
+            ->table('trunks')
+            ->get();
 
         // dd($ivrs);
         return Inertia::render('Campaigns/Edit', [
@@ -148,33 +146,24 @@ class CampaignController extends Controller
 
     public function startCalling(Campaign $campaign)
     {
-        $CampaignContact = CampaignContact::where('campaign_id', $campaign->id)->get();
-        foreach ($CampaignContact as $number) {
-            $source = $campaign->trunk_channalId;
-            $destination = '0'.$number->phone_number;     
-            $callId = (string) Str::uuid();
-            $result = app(AmiService::class)->originateCall([
-                'channel'   => "SIP/{$source}/{$destination}",
-                'context'   => 'ivr-' . $campaign->ivr_id,
-                'extension' => 's',
-                'priority'  => 1,
-                'caller_id' => $number->phone_number,
-                'async'     => true,
-                'variables' => [
-                    'CALL_UUID'   => $callId,
-                    'CAMPAIGN_ID' => $campaign->id,
-                    'CONTACT_ID'  => $number->id,
-                    'PHONE'       => $destination,
-                ],
-            ]);
-
-        Log::info("AMI Result", [
-            'number' => $destination,
-            'response' => $result
+        $campaign->update([
+            'status' => 'in_progress',
+            'started_at' => now(),
         ]);
-    
+
+        Cache::put("campaign_active_calls_{$campaign->id}", 0, 300);
+
+        $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)
+            ->where('status', 'pending')
+            ->orderBy('id')
+            ->limit($campaign->no_of_calls)
+            ->get();
+
+        foreach ($pendingContacts as $contact) {
+            ProcessCampaignCall::dispatch($contact->id, $campaign->id);
         }
-   
-        // return Redirect::route('campaigns.index')->with('success', 'Campaign started successfully.');
+
+        return Redirect::route('campaigns.index')
+            ->with('success', 'Campaign started successfully. Calls are being processed.');
     }
 }

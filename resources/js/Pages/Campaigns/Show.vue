@@ -16,6 +16,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    statusCounts: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const getStatusBadgeClass = (status) => {
@@ -66,44 +70,50 @@ const deleteContact = (id) => {
                                 </p>
                             </div>
                             <div class="flex space-x-2">
-                                <Link :href="route('campaigns.edit', { campaign: campaign.id })"
+                                <!-- <Link :href="route('campaigns.edit', { campaign: campaign.id })"
                                     class="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600">
                                     Edit
-                                </Link>
-                                <button @click="router.delete(route('campaigns.destroy', { campaign: campaign.id }))"
+                                </Link> -->
+                                <!-- <button @click="router.delete(route('campaigns.destroy', { campaign: campaign.id }))"
                                     class="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
                                     Delete
-                                </button>
+                                </button> -->
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider">Extension</p>
-                                <p class="text-sm text-gray-900">{{ campaign.extension?.name || 'N/A' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider">Voice Message</p>
-                                <p class="text-sm text-gray-900">{{ campaign.voice_message?.name || 'N/A' }}</p>
-                            </div>
+                            
                             <div>
                                 <p class="text-xs text-gray-500 uppercase tracking-wider">Total Contacts</p>
                                 <p class="text-sm text-gray-900">{{ campaign.total_contacts }}</p>
                             </div>
                         </div>
 
-                        <div class="mt-6 grid grid-cols-3 gap-4">
-                            <div class="text-center p-4 bg-blue-50 rounded-lg">
-                                <p class="text-2xl font-bold text-blue-600">{{ campaign.called_contacts }}</p>
-                                <p class="text-xs text-gray-500">Called</p>
-                            </div>
-                            <div class="text-center p-4 bg-green-50 rounded-lg">
-                                <p class="text-2xl font-bold text-green-600">{{ campaign.successful_calls }}</p>
-                                <p class="text-xs text-gray-500">Successful</p>
-                            </div>
-                            <div class="text-center p-4 bg-red-50 rounded-lg">
-                                <p class="text-2xl font-bold text-red-600">{{ campaign.failed_calls }}</p>
-                                <p class="text-xs text-gray-500">Failed</p>
+                      
+
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Status Summary</h4>
+                            <div class="grid grid-cols-5 gap-4">
+                                <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-yellow-600">{{ statusCounts.pending || 0 }}</p>
+                                    <p class="text-xs text-gray-500">Pending</p>
+                                </div>
+                                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-blue-600">{{ statusCounts.calling || 0 }}</p>
+                                    <p class="text-xs text-gray-500">Calling</p>
+                                </div>
+                                <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-purple-600">{{ statusCounts.ringing || 0 }}</p>
+                                    <p class="text-xs text-gray-500">Ringing</p>
+                                </div>
+                                <div class="text-center p-4 bg-red-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-red-600">{{ statusCounts.failed || 0 }}</p>
+                                    <p class="text-xs text-gray-500">Failed</p>
+                                </div>
+                                <div class="text-center p-4 bg-green-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-green-600">{{ statusCounts.success || 0 }}</p>
+                                    <p class="text-xs text-gray-500">Success</p>
+                                </div>
                             </div>
                         </div>
 

@@ -72,6 +72,8 @@ class CampaignController extends Controller
     {
         $campaign->load(['extension', 'voiceMessage', 'contacts']);
 
+        $statusCounts = $campaign->contacts->groupBy('status')->map->count();
+
         return Inertia::render('Campaigns/Show', [
             'campaign' => [
                 'id' => $campaign->id,
@@ -88,6 +90,13 @@ class CampaignController extends Controller
                 'completed_at' => $campaign->completed_at,
             ],
             'contacts' => $campaign->contacts,
+            'statusCounts' => [
+                'pending' => $statusCounts->get('pending', 0),
+                'calling' => $statusCounts->get('calling', 0),
+                'ringing' => $statusCounts->get('calling_ringing', 0),
+                'failed' => $statusCounts->get('failed', 0),
+                'success' => $statusCounts->get('success', 0) + $statusCounts->get('successful', 0),
+            ],
             'success' => session('success'),
         ]);
     }

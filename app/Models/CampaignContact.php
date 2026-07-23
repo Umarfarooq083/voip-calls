@@ -96,6 +96,11 @@ class CampaignContact extends Model
 
     public function scopeTerminal($query)
     {
-        return $query->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped']);
+        return $query->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy']);
+    }
+
+    public function scopeBusy($query)
+    {
+        return $query->where('status', 'busy');
     }
 }

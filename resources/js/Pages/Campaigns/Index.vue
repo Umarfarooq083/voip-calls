@@ -153,8 +153,9 @@ const getStatusBadgeClass = (status) => {
                                         {{ campaign.status.replace('_', ' ') }}
                                     </span>
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
-                                    <Link :href="route('campaigns.startcalling', { campaign: campaign.id })"
+                                    <Link v-if="campaign.status === 'pending'  || campaign.status === 'in_progress' " :href="route('campaigns.startcalling', { campaign: campaign.id })"
                                         class="hover:underline mr-4">
                                         Start Calling
                                     </Link>

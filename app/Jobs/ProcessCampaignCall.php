@@ -38,14 +38,7 @@ class ProcessCampaignCall implements ShouldQueue
             return;
         }
 
-        // Log::info('PROCESSING CAMPAIGN CALL JOB', [
-        //     'contact_id' => $contact->id,
-        //     'campaign_id' => $campaign->id,
-        //     'contact_status' => $contact->status,
-        //     'active_calls' => Cache::get("campaign_active_calls_{$campaign->id}", 0),
-        // ]);
-
-        if (in_array($contact->status, ['called', 'calling_ringing', 'attended', '1_pressed', 'rejected', 'not_answered', 'success', 'successful', 'failed', 'skipped'])) {
+        if (in_array($contact->status, ['called', 'calling', 'calling_ringing', 'attended', '1_pressed', 'rejected', 'not_answered', 'success', 'successful', 'failed', 'skipped', 'busy', 'queued'])) {
             return;
         }
 
@@ -93,14 +86,6 @@ class ProcessCampaignCall implements ShouldQueue
             ],
         ]);
 
-        // Log::info('AMI Result', [
-        //     'number' => $destination,
-        //     'response' => $result,
-        //     'contact_id' => $contact->id,
-        //     'campaign_id' => $campaign->id,
-        //     'call_uuid' => $callUuid,
-        // ]);
-
         if (! $result) {
             Cache::put("campaign_active_calls_{$campaign->id}", max(0, $activeCalls - 1), 300);
             $contact->update(['status' => 'failed']);
@@ -115,6 +100,7 @@ class ProcessCampaignCall implements ShouldQueue
         $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
 
         if ($activeCalls >= $campaign->no_of_calls) {
+            $this->checkCompletion($campaign);
             return;
         }
 
@@ -128,8 +114,6 @@ class ProcessCampaignCall implements ShouldQueue
             $job->handle();
 
             return;
-        }else{
-            $campaign->update(['status' => 'completed']);
         }
 
         $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)
@@ -149,7 +133,7 @@ class ProcessCampaignCall implements ShouldQueue
     protected function checkCompletion(Campaign $campaign): void
     {
         $completedCount = CampaignContact::where('campaign_id', $campaign->id)
-            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped'])
+            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy'])
             ->count();
 
         if ($completedCount >= $campaign->total_contacts && $campaign->total_contacts > 0) {

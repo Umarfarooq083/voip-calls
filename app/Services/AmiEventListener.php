@@ -369,6 +369,7 @@ class AmiEventListener
         $activeCalls = Cache::get("campaign_active_calls_{$campaignId}", 0);
 
         if ($activeCalls >= $campaign->no_of_calls) {
+            $this->checkCompletion($campaign);
             return;
         }
 
@@ -393,6 +394,26 @@ class AmiEventListener
         foreach ($pendingContacts as $contact) {
             $job = new ProcessCampaignCall($contact->id, $campaignId);
             $job->handle();
+        }
+
+        $this->checkCompletion($campaign);
+    }
+
+    protected function checkCompletion(Campaign $campaign): void
+    {
+        if ($campaign->status !== 'in_progress') {
+            return;
+        }
+
+        $completedCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy'])
+            ->count();
+
+        if ($completedCount >= $campaign->total_contacts && $campaign->total_contacts > 0) {
+            $campaign->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
         }
     }
 

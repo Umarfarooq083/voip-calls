@@ -25,6 +25,7 @@ const getStatusBadgeClass = (status) => {
         successful: 'bg-green-100 text-green-800',
         failed: 'bg-red-100 text-red-800',
         skipped: 'bg-gray-100 text-gray-800',
+        busy: 'bg-purple-100 text-purple-800',
     };
     return classes[status] || 'bg-gray-100 text-gray-800';
 };

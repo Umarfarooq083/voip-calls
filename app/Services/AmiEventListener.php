@@ -242,18 +242,25 @@ class AmiEventListener
 
         if ($uid && isset($this->calls[$uid])) {
             $this->bridgedCalls[$uid] = true;
-
-            $contactId = $this->calls[$uid]['CONTACT_ID'] ?? null;
-
-            if ($contactId) {
-                $contact = CampaignContact::find($contactId);
-                if ($contact && in_array($contact->status, ['calling', 'pending', 'attended'])) {
-                    $contact->update(['status' => 'success']);
-                }
-            }
         }
 
         Log::info('BRIDGE ENTER => onBridgeEnter', $event);
+        //   $uid = $event['Uniqueid'] ?? null;
+        // if ($uid && isset($this->calls[$uid])) {
+        //     $this->bridgedCalls[$uid] = true;
+
+        //     $contactId = $this->calls[$uid]['CONTACT_ID'] ?? null;
+
+        //     if ($contactId) {
+        //         $contact = CampaignContact::find($contactId);
+        //         if ($contact && in_array($contact->status, ['calling', 'pending', 'attended'])) {
+        //             $contact->update(['status' => 'success']);
+        //         }
+        //     }
+        // }
+
+
+
     }
 
     protected function onBridgeLeave(array $event): void
@@ -343,7 +350,13 @@ class AmiEventListener
             'uid'         => $uid,
         ]);
 
-        unset($this->calls[$uid], $this->answeredCalls[$uid]);
+        $campaignId = $call['CAMPAIGN_ID'] ?? null;
+        if ($campaignId) {
+            Cache::decrement("campaign_active_calls_{$campaignId}", 1);
+            $this->processNextInQueue($campaignId);
+        }
+
+        unset($this->calls[$uid], $this->answeredCalls[$uid], $this->bridgedCalls[$uid]);
     }
 
     protected function processNextInQueue(int $campaignId): void
@@ -438,22 +451,7 @@ class AmiEventListener
                 $contact->campaign->increment('failed_calls');
                 Cache::decrement("campaign_active_calls_{$contact->campaign_id}", 1);
 
-                $campaign = $contact->campaign;
-                $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
-
-                if ($activeCalls >= $campaign->no_of_calls) {
-                    return;
-                }
-
-                $nextContact = CampaignContact::where('campaign_id', $campaign->id)
-                    ->where('status', 'queued')
-                    ->orderBy('id')
-                    ->first();
-
-                if ($nextContact) {
-                    $job = new ProcessCampaignCall($nextContact->id, $campaign->id);
-                    $job->handle();
-                }
+                $this->processNextInQueue($contact->campaign_id);
             }
         }
     }

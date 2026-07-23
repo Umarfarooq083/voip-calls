@@ -128,6 +128,8 @@ class ProcessCampaignCall implements ShouldQueue
             $job->handle();
 
             return;
+        }else{
+            $campaign->update(['status' => 'completed']);
         }
 
         $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)

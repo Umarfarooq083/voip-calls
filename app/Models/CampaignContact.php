@@ -17,6 +17,7 @@ class CampaignContact extends Model
         'call_uuid',
         'channel',
         'called_at',
+        'dtmf_status',
         'notes',
     ];
 

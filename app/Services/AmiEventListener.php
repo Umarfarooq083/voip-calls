@@ -298,7 +298,8 @@ class AmiEventListener
             if (!empty($call['CONTACT_ID'])) {
                 CampaignContact::where('id', $call['CONTACT_ID'])
                     ->update([
-                        'status' => '1_pressed'
+                        'status' => '1_pressed',
+                        'dtmf_status' => '1'
                     ]);
             }
         }

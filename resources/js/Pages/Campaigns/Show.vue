@@ -28,10 +28,20 @@ const getStatusBadgeClass = (status) => {
         called: 'bg-blue-100 text-blue-800',
         successful: 'bg-green-100 text-green-800',
         failed: 'bg-red-100 text-red-800',
-        skipped: 'bg-gray-100 text-gray-800',
+        skipped: 'bg-gray-100 text-gray-500',
         busy: 'bg-purple-100 text-purple-800',
     };
     return classes[status] || 'bg-gray-100 text-gray-800';
+};
+
+const startCalling = () => {
+    router.get(route('campaigns.startcalling', { campaign: campaign.id }));
+};
+
+const retryFailedCalls = () => {
+    if (confirm('Are you sure you want to retry all failed, busy, and unanswered calls?')) {
+        router.post(route('campaigns.retryfailed', { campaign: campaign.id }));
+    }
 };
 
 const deleteContact = (id) => {
@@ -70,13 +80,13 @@ const deleteContact = (id) => {
                                 </p>
                             </div>
                             <div class="flex space-x-2">
-                                <!-- <Link :href="route('campaigns.edit', { campaign: campaign.id })"
+                                <!-- <button @click="startCalling"
                                     class="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600">
-                                    Edit
-                                </Link> -->
-                                <!-- <button @click="router.delete(route('campaigns.destroy', { campaign: campaign.id }))"
-                                    class="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
-                                    Delete
+                                    Start Calling
+                                </button> -->
+                                <!-- <button @click="retryFailedCalls"
+                                    class="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
+                                    Retry Failed Calls
                                 </button> -->
                             </div>
                         </div>
@@ -89,11 +99,11 @@ const deleteContact = (id) => {
                             </div>
                         </div>
 
-                      
+                        
 
                         <div class="mt-6">
                             <h4 class="text-sm font-medium text-gray-700 mb-3">Status Summary</h4>
-                            <div class="grid grid-cols-5 gap-4">
+                            <div class="grid grid-cols-6 gap-4">
                                 <div class="text-center p-4 bg-yellow-50 rounded-lg">
                                     <p class="text-2xl font-bold text-yellow-600">{{ statusCounts.pending || 0 }}</p>
                                     <p class="text-xs text-gray-500">Pending</p>
@@ -113,6 +123,10 @@ const deleteContact = (id) => {
                                 <div class="text-center p-4 bg-green-50 rounded-lg">
                                     <p class="text-2xl font-bold text-green-600">{{ statusCounts.success || 0 }}</p>
                                     <p class="text-xs text-gray-500">Success</p>
+                                </div>
+                                <div class="text-center p-4 bg-orange-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-orange-600">{{ statusCounts.busy + statusCounts.not_answered }}</p>
+                                    <p class="text-xs text-gray-500">Retry</p>
                                 </div>
                             </div>
                         </div>

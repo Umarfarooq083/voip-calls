@@ -50,6 +50,16 @@ const deleteCampaign = (id) => {
     }
 };
 
+const startCalling = (campaignId) => {
+    router.get(route('campaigns.startcalling', { campaign: campaignId }));
+};
+
+const retryFailedCalls = (campaignId) => {
+    if (confirm('Are you sure you want to retry all failed, busy, and unanswered calls?')) {
+        router.post(route('campaigns.retryfailed', { campaign: campaignId }));
+    }
+};
+
 const getStatusBadgeClass = (status) => {
     const classes = {
         pending: 'bg-yellow-100 text-yellow-800',
@@ -155,10 +165,12 @@ const getStatusBadgeClass = (status) => {
                                 </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
-                                    <Link v-if="campaign.status === 'pending'  || campaign.status === 'in_progress' " :href="route('campaigns.startcalling', { campaign: campaign.id })"
-                                        class="hover:underline mr-4">
+                                    <button v-if="campaign.status === 'pending' || campaign.status === 'in_progress'" @click="startCalling(campaign.id)" class="hover:underline mr-4">
                                         Start Calling
-                                    </Link>
+                                    </button>
+                                    <button  @click="retryFailedCalls(campaign.id)" class="hover:underline mr-4 text-orange-600">
+                                        Retry Failed Calls
+                                    </button>
                                     <Link :href="route('campaigns.edit', { campaign: campaign.id })"
                                         class="hover:underline mr-4">
                                         Edit

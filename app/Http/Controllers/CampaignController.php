@@ -96,6 +96,8 @@ class CampaignController extends Controller
                 'ringing' => $statusCounts->get('calling_ringing', 0),
                 'failed' => $statusCounts->get('failed', 0),
                 'success' => $statusCounts->get('success', 0) + $statusCounts->get('successful', 0),
+                'busy' => $statusCounts->get('busy', 0),
+                'not_answered' => $statusCounts->get('not_answered', 0),
             ],
             'success' => session('success'),
         ]);
@@ -174,5 +176,25 @@ class CampaignController extends Controller
 
         return Redirect::route('campaigns.index')
             ->with('success', 'Campaign started successfully. Calls are being processed.');
+    }
+
+    public function retryFailedCalls(Campaign $campaign)
+    {
+        $retryStatuses = ['failed', 'busy', 'not_answered'];
+        $retryContacts = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $retryStatuses)
+            ->orderBy('id')
+            ->limit($campaign->no_of_calls)
+            ->get();
+         $campaign->update([
+            'status' => 'in_progress'
+         ]);
+        foreach ($retryContacts as $contact) {
+            $contact->update(['status' => 'pending']);
+            ProcessCampaignCall::dispatch($contact->id, $campaign->id);
+        }
+
+        return Redirect::route('campaigns.index', $campaign->id)
+            ->with('success', 'Retry initiated for ' . $retryContacts->count() . ' contacts.');
     }
 }

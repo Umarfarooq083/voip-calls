@@ -353,6 +353,14 @@ class AmiEventListener
 
         $campaignId = $call['CAMPAIGN_ID'] ?? null;
         if ($campaignId) {
+            $campaign = Campaign::find($campaignId);
+            if ($campaign) {
+                if ($status === 'successful') {
+                    $campaign->increment('successful_calls');
+                } elseif (in_array($status, ['failed', 'not_answered', 'busy'])) {
+                    $campaign->increment('failed_calls');
+                }
+            }
             Cache::decrement("campaign_active_calls_{$campaignId}", 1);
             $this->processNextInQueue($campaignId);
         }
@@ -472,7 +480,6 @@ class AmiEventListener
             if ($contact->campaign) {
                 $contact->campaign->increment('failed_calls');
                 Cache::decrement("campaign_active_calls_{$contact->campaign_id}", 1);
-
                 $this->processNextInQueue($contact->campaign_id);
             }
         }

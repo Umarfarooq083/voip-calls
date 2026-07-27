@@ -99,8 +99,6 @@ const deleteContact = (id) => {
                             </div>
                         </div>
 
-                        
-
                         <div class="mt-6">
                             <h4 class="text-sm font-medium text-gray-700 mb-3">Status Summary</h4>
                             <div class="grid grid-cols-6 gap-4">
@@ -108,13 +106,17 @@ const deleteContact = (id) => {
                                     <p class="text-2xl font-bold text-yellow-600">{{ statusCounts.pending || 0 }}</p>
                                     <p class="text-xs text-gray-500">Pending</p>
                                 </div>
-                                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                <!-- <div class="text-center p-4 bg-blue-50 rounded-lg">
                                     <p class="text-2xl font-bold text-blue-600">{{ statusCounts.calling || 0 }}</p>
                                     <p class="text-xs text-gray-500">Calling</p>
-                                </div>
+                                </div> -->
                                 <div class="text-center p-4 bg-purple-50 rounded-lg">
                                     <p class="text-2xl font-bold text-purple-600">{{ statusCounts.ringing || 0 }}</p>
                                     <p class="text-xs text-gray-500">Ringing</p>
+                                </div>
+                                <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                    <p class="text-2xl font-bold text-purple-600">{{ statusCounts.ringing || 0 }}</p>
+                                    <p class="text-xs text-gray-500">Move to Agent</p>
                                 </div>
                                 <div class="text-center p-4 bg-red-50 rounded-lg">
                                     <p class="text-2xl font-bold text-red-600">{{ statusCounts.failed || 0 }}</p>
@@ -124,10 +126,7 @@ const deleteContact = (id) => {
                                     <p class="text-2xl font-bold text-green-600">{{ statusCounts.success || 0 }}</p>
                                     <p class="text-xs text-gray-500">Success</p>
                                 </div>
-                                <div class="text-center p-4 bg-orange-50 rounded-lg">
-                                    <p class="text-2xl font-bold text-orange-600">{{ statusCounts.busy + statusCounts.not_answered }}</p>
-                                    <p class="text-xs text-gray-500">Retry</p>
-                                </div>
+                               
                             </div>
                         </div>
 

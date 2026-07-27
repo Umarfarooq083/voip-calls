@@ -77,7 +77,7 @@ class AmiEventListener
             $line = trim(fgets($this->socket));
             $lineCount++;
 
-            if ($lineCount > 10000) {
+            if ($lineCount > 100000) {
                 Log::warning('AMI LISTENER LINE LIMIT REACHED');
                 break;
             }

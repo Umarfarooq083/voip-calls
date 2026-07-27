@@ -44,6 +44,20 @@ const handleSearch = () => {
     }, 900);
 };
 
+
+const formatDate = (date) => {
+    if (!date) return 'N/A';
+
+    return new Date(date).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+
 const deleteCampaign = (id) => {
     if (confirm('Are you sure you want to delete this campaign?')) {
         router.delete(route('campaigns.destroy', { campaign: id }));
@@ -136,6 +150,14 @@ const getStatusBadgeClass = (status) => {
                                 </th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Start At
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Completed
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -163,7 +185,14 @@ const getStatusBadgeClass = (status) => {
                                         {{ campaign.status.replace('_', ' ') }}
                                     </span>
                                 </td>
-
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <!-- {{ new Date(campaign?.started_at).toLocaleString() }}  -->
+                                    <!-- {{ new Date(campaign?.started_at).toLocaleDateString() }} -->
+                                    {{ formatDate(campaign?.started_at) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ formatDate(campaign?.completed_at) }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
                                     <button v-if="campaign.status === 'pending' || campaign.status === 'in_progress'" @click="startCalling(campaign.id)" class="hover:underline mr-4">
                                         Start Calling

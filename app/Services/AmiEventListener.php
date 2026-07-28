@@ -362,7 +362,12 @@ class AmiEventListener
                 }
             }
             Cache::decrement("campaign_active_calls_{$campaignId}", 1);
-            $this->processNextInQueue($campaignId);
+            $contact = CampaignContact::find($call['CONTACT_ID'] ?? null);
+            if ($contact) {
+                ProcessCampaignCall::handleContactCompletion($contact);
+            } else {
+                $this->processNextInQueue($campaignId);
+            }
         }
 
         unset($this->calls[$uid], $this->answeredCalls[$uid], $this->bridgedCalls[$uid]);
@@ -415,7 +420,7 @@ class AmiEventListener
         }
 
         $completedCount = CampaignContact::where('campaign_id', $campaign->id)
-            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy'])
+            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy', 'completed'])
             ->count();
 
         if ($completedCount >= $campaign->total_contacts && $campaign->total_contacts > 0) {

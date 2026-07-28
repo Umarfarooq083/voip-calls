@@ -95,7 +95,7 @@ class ProcessCampaignCall implements ShouldQueue
         }
     }
 
-    public function processNextInQueue(Campaign $campaign): void
+    protected function processNextInQueue(Campaign $campaign): void
     {
         $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
 
@@ -134,6 +134,81 @@ class ProcessCampaignCall implements ShouldQueue
     {
         $completedCount = CampaignContact::where('campaign_id', $campaign->id)
             ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy'])
+            ->count();
+
+        if ($completedCount >= $campaign->total_contacts && $campaign->total_contacts > 0) {
+            $campaign->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+        }
+    }
+
+    public static function handleContactCompletion(CampaignContact $contact): void
+    {
+        $campaign = $contact->campaign;
+        if (! $campaign || $campaign->status !== 'in_progress') {
+            return;
+        }
+
+        Cache::decrement("campaign_active_calls_{$campaign->id}", 1);
+
+        if ($contact->isSubContact()) {
+            $mainContact = $contact->parentContact;
+            if ($mainContact && $mainContact->status !== 'completed') {
+                $subContactsCompleted = $mainContact->subContacts()
+                    ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy'])
+                    ->count();
+
+                $totalSubContacts = $mainContact->subContacts()->count();
+
+                if ($subContactsCompleted >= $totalSubContacts && $totalSubContacts > 0) {
+                    $mainContact->update(['status' => 'completed']);
+                }
+            }
+        }
+
+        $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
+
+        if ($activeCalls >= $campaign->no_of_calls) {
+            self::checkCampaignCompletion($campaign);
+            return;
+        }
+
+        $nextContact = CampaignContact::where('campaign_id', $campaign->id)
+            ->where('status', 'queued')
+            ->orderBy('id')
+            ->first();
+
+        if ($nextContact) {
+            $job = new ProcessCampaignCall($nextContact->id, $campaign->id);
+            $job->handle();
+
+            return;
+        }
+
+        $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)
+            ->where('status', 'pending')
+            ->orderBy('id')
+            ->limit($campaign->no_of_calls - $activeCalls)
+            ->get();
+
+        foreach ($pendingContacts as $contact) {
+            $job = new ProcessCampaignCall($contact->id, $campaign->id);
+            $job->handle();
+        }
+
+        self::checkCampaignCompletion($campaign);
+    }
+
+    protected static function checkCampaignCompletion(Campaign $campaign): void
+    {
+        if ($campaign->status !== 'in_progress') {
+            return;
+        }
+
+        $completedCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy', 'completed'])
             ->count();
 
         if ($completedCount >= $campaign->total_contacts && $campaign->total_contacts > 0) {

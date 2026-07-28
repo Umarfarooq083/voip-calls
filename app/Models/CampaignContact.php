@@ -11,6 +11,7 @@ class CampaignContact extends Model
 
     protected $fillable = [
         'campaign_id',
+        'parent_contact_id',
         'customer_name',
         'phone_number',
         'status',
@@ -33,6 +34,26 @@ class CampaignContact extends Model
     public function campaign()
     {
         return $this->belongsTo(Campaign::class);
+    }
+
+    public function parentContact()
+    {
+        return $this->belongsTo(CampaignContact::class, 'parent_contact_id');
+    }
+
+    public function subContacts()
+    {
+        return $this->hasMany(CampaignContact::class, 'parent_contact_id');
+    }
+
+    public function isMainContact(): bool
+    {
+        return is_null($this->parent_contact_id);
+    }
+
+    public function isSubContact(): bool
+    {
+        return !is_null($this->parent_contact_id);
     }
 
     public function scopePending($query)

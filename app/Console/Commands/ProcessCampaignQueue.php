@@ -103,7 +103,7 @@ class ProcessCampaignQueue extends Command
     protected function checkCompletion(Campaign $campaign): void
     {
         $completedCount = CampaignContact::where('campaign_id', $campaign->id)
-            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped'])
+            ->whereIn('status', ['success', 'successful', 'rejected', 'not_answered', 'failed', 'skipped', 'busy', 'completed'])
             ->count();
 
         if ($completedCount >= $campaign->total_contacts && $campaign->total_contacts > 0) {

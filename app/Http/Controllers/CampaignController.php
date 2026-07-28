@@ -25,6 +25,29 @@ class CampaignController extends Controller
 
         $campaigns = app(CampaignService::class)->list($filters);
 
+        $inProgressCampaignsWithCounts = Campaign::where('status', 'in_progress')
+            ->with(['extension', 'contacts'])
+            ->get()
+            ->map(function ($campaign) {
+                $statusCounts = $campaign->contacts->groupBy('status')->map->count();
+                return [
+                    'id' => $campaign->id,
+                    'name' => $campaign->name,
+                    'status' => $campaign->status,
+                    'total_contacts' => $campaign->total_contacts,
+                    'started_at' => $campaign->started_at,
+                    'status_counts' => [
+                        'pending' => $statusCounts->get('pending', 0),
+                        'calling_ringing' => $statusCounts->get('calling_ringing', 0),
+                        'attended' => $statusCounts->get('attended', 0),
+                        'failed' => $statusCounts->get('failed', 0) + $statusCounts->get('busy', 0) + $statusCounts->get('not_answered', 0),
+                        '1_pressed' => $statusCounts->get('1_pressed', 0),
+                        'successful' => $statusCounts->get('successful', 0),
+                    ],
+                ];
+            });
+            // 'pending','calling','called','calling_ringing','rejected','not_answered','attended','1_pressed','success','successful','failed','skipped','busy'
+
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns->items(),
             'filters' => $filters,
@@ -39,6 +62,7 @@ class CampaignController extends Controller
                 'next' => $campaigns->currentPage() < $campaigns->lastPage() ? $campaigns->url($campaigns->currentPage() + 1) : null,
             ],
             'success' => session('success'),
+            'inProgressCampaigns' => $inProgressCampaignsWithCounts,
         ]);
     }
 

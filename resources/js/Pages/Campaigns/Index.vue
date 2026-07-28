@@ -24,6 +24,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    inProgressCampaigns: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const { filters } = toRefs(props);
@@ -120,7 +124,54 @@ const getStatusBadgeClass = (status) => {
                     {{ success }}
                 </div>
 
-                <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                <div v-if="inProgressCampaigns.length > 0" class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">In Progress Campaigns</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="campaign in inProgressCampaigns" :key="campaign.id" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="text-sm font-semibold text-gray-900">{{ campaign.name }}</h4>
+                                <span :class="getStatusBadgeClass(campaign.status)"
+                                    class="px-2 py-1 rounded-full text-xs font-medium">
+                                    {{ campaign.status.replace('_', ' ') }}
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div>
+                                    <p class="text-lg font-bold text-yellow-600">{{ campaign.status_counts.pending }}</p>
+                                    <p class="text-xs text-gray-500">Pending</p>
+                                </div>
+                                <div>
+                                    <p class="text-lg font-bold text-red-600">{{ campaign.status_counts.failed }}</p>
+                                    <p class="text-xs text-gray-500">Failed</p>
+                                </div>
+                                <div>
+                                    <p class="text-lg font-bold text-green-600">{{ campaign.status_counts.attended }}</p>
+                                    <p class="text-xs text-gray-500">Attended</p>
+                                </div>
+                                <div>
+                                    <p class="text-lg font-bold text-green-600">{{ campaign.status_counts.calling_ringing }}</p>
+                                    <p class="text-xs text-gray-500">Ringing</p>
+                                </div>
+                                <div>
+                                    <p class="text-lg font-bold text-green-600">{{ campaign.status_counts['1_pressed'] }}</p>
+                                    <p class="text-xs text-gray-500">Move to Agent</p>
+                                </div>
+                                <div>
+                                    <p class="text-lg font-bold text-green-600">{{ campaign.status_counts.successful }}</p>
+                                    <p class="text-xs text-gray-500">Successful</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                <Link :href="route('campaigns.show', { campaign: campaign.id })"
+                                    class="text-sm text-indigo-600 hover:underline">
+                                    View Details
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white shadow-sm sm:rounded-lg">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>

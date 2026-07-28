@@ -115,7 +115,7 @@ const deleteContact = (id) => {
                                     <p class="text-xs text-gray-500">Ringing</p>
                                 </div>
                                 <div class="text-center p-4 bg-purple-50 rounded-lg">
-                                    <p class="text-2xl font-bold text-purple-600">{{ statusCounts.ringing || 0 }}</p>
+                                    <p class="text-2xl font-bold text-purple-600">{{ statusCounts?.dtmf_status || 0 }}</p>
                                     <p class="text-xs text-gray-500">Move to Agent</p>
                                 </div>
                                 <div class="text-center p-4 bg-red-50 rounded-lg">

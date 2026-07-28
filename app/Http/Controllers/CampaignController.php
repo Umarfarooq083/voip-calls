@@ -24,7 +24,6 @@ class CampaignController extends Controller
         $filters = $request->only(['status', 'search']);
 
         $campaigns = app(CampaignService::class)->list($filters);
-
         $inProgressCampaignsWithCounts = Campaign::where('status', 'in_progress')
             ->with(['extension', 'contacts'])
             ->get()
@@ -47,7 +46,7 @@ class CampaignController extends Controller
                 ];
             });
             // 'pending','calling','called','calling_ringing','rejected','not_answered','attended','1_pressed','success','successful','failed','skipped','busy'
-
+        // dd($inProgressCampaignsWithCounts);
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns->items(),
             'filters' => $filters,
@@ -94,8 +93,7 @@ class CampaignController extends Controller
 
     public function show(Campaign $campaign)
     {
-        $campaign->load(['extension', 'voiceMessage', 'contacts']);
-
+        $campaign->load(['contacts']);
         $statusCounts = $campaign->contacts->groupBy('status')->map->count();
 
         return Inertia::render('Campaigns/Show', [
@@ -119,6 +117,7 @@ class CampaignController extends Controller
                 'calling' => $statusCounts->get('calling', 0),
                 'ringing' => $statusCounts->get('calling_ringing', 0),
                 'failed' => $statusCounts->get('failed', 0),
+                'dtmf_status' => $campaign['contacts']->where('dtmf_status', 1)->count(),
                 'success' => $statusCounts->get('success', 0) + $statusCounts->get('successful', 0),
                 'busy' => $statusCounts->get('busy', 0),
                 'not_answered' => $statusCounts->get('not_answered', 0),
@@ -205,11 +204,22 @@ class CampaignController extends Controller
     public function retryFailedCalls(Campaign $campaign)
     {
         $retryStatuses = ['failed', 'busy', 'not_answered'];
+        CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $retryStatuses)->update(['status'=>'pending']);
+        // dd($updateStatusToPending);
+        // $retryContacts = CampaignContact::where('campaign_id', $campaign->id)
+        //     ->whereIn('status', $retryStatuses)
+        //     ->orderBy('id')
+        //     ->limit($campaign->no_of_calls)
+        //     ->get();
+
         $retryContacts = CampaignContact::where('campaign_id', $campaign->id)
-            ->whereIn('status', $retryStatuses)
+            ->where('status', 'pending')
             ->orderBy('id')
             ->limit($campaign->no_of_calls)
             ->get();
+
+
          $campaign->update([
             'status' => 'in_progress'
          ]);

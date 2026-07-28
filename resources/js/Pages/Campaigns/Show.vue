@@ -16,6 +16,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    error: {
+        type: String,
+        default: '',
+    },
     statusCounts: {
         type: Object,
         default: () => ({}),
@@ -44,6 +48,12 @@ const retryFailedCalls = () => {
     }
 };
 
+const stopCampaign = () => {
+    if (confirm('Are you sure you want to stop this campaign? Pending contacts will not be called.')) {
+        router.post(route('campaigns.stop', { campaign: campaign.id }));
+    }
+};
+
 const deleteContact = (id) => {
     if (confirm('Are you sure you want to delete this contact?')) {
         router.delete(route('campaign_contacts.destroy', { contact: id }));
@@ -66,6 +76,10 @@ const deleteContact = (id) => {
                     {{ success }}
                 </div>
 
+                <div v-if="error" class="mb-4 rounded-md bg-red-100 p-4 text-sm text-red-700">
+                    {{ error }}
+                </div>
+
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6">
                         <div class="flex justify-between items-start mb-4">
@@ -80,6 +94,12 @@ const deleteContact = (id) => {
                                 </p>
                             </div>
                             <div class="flex space-x-2">
+                                <button v-if="campaign.status === 'in_progress'"
+                                    @click="stopCampaign"
+                                    class="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+                                >
+                                    Stop Campaign
+                                </button>
                                 <!-- <button @click="startCalling"
                                     class="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600">
                                     Start Calling
@@ -159,6 +179,10 @@ const deleteContact = (id) => {
                                         </th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            DTMF
+                                        </th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
                                         </th>
                                         <th
@@ -174,6 +198,9 @@ const deleteContact = (id) => {
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ contact.phone_number }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {{ contact?.dtmf_status }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             <span :class="getStatusBadgeClass(contact.status)"

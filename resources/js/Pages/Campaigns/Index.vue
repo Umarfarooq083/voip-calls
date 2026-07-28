@@ -24,6 +24,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    error: {
+        type: String,
+        default: '',
+    },
     inProgressCampaigns: {
         type: Array,
         default: () => [],
@@ -78,6 +82,12 @@ const retryFailedCalls = (campaignId) => {
     }
 };
 
+const stopCampaign = (campaignId) => {
+    if (confirm('Are you sure you want to stop this campaign? Pending contacts will not be called.')) {
+        router.post(route('campaigns.stop', { campaign: campaignId }));
+    }
+};
+
 const getStatusBadgeClass = (status) => {
     const classes = {
         pending: 'bg-yellow-100 text-yellow-800',
@@ -122,6 +132,10 @@ const getStatusBadgeClass = (status) => {
 
                 <div v-if="success" class="mb-4 rounded-md bg-green-100 p-4 text-sm text-green-700">
                     {{ success }}
+                </div>
+
+                <div v-if="error" class="mb-4 rounded-md bg-red-100 p-4 text-sm text-red-700">
+                    {{ error }}
                 </div>
 
                 <div v-if="inProgressCampaigns.length > 0" class="mb-6">
@@ -247,7 +261,7 @@ const getStatusBadgeClass = (status) => {
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <!-- Start Calling Button -->
                                     <button style="padding: 8px;"
-                                        v-if="campaign.status === 'pending' || campaign.status === 'in_progress'" 
+                                        v-if="campaign.status === 'pending'" 
                                         @click="startCalling(campaign.id)" 
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors mr-2"
                                         title="Start calling campaign"
@@ -262,12 +276,24 @@ const getStatusBadgeClass = (status) => {
                                     <button style="padding: 8px;"
                                         @click="retryFailedCalls(campaign.id)" 
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors mr-2"
-                                        title="Retry failed calls"
+                                        title="Retry or resume calls"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                         <!-- Retry Failed -->
+                                    </button>
+
+                                    <!-- Stop Campaign Button -->
+                                    <button v-if="campaign.status === 'in_progress'" style="padding: 8px;"
+                                        @click="stopCampaign(campaign.id)" 
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors mr-2"
+                                        title="Stop campaign"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        <!-- Stop -->
                                     </button>
 
                                     <!-- Edit Button -->

@@ -231,4 +231,22 @@ class CampaignController extends Controller
         return Redirect::route('campaigns.index', $campaign->id)
             ->with('success', 'Retry initiated for ' . $retryContacts->count() . ' contacts.');
     }
+
+    public function stopCampaign(Campaign $campaign)
+    {
+        if ($campaign->status !== 'in_progress') {
+            return Redirect::route('campaigns.index')
+                ->with('error', 'Campaign cannot be stopped. It is not currently in progress.');
+        }
+
+        $campaign->update([
+            'status' => 'paused',
+            'completed_at' => now(),
+        ]);
+
+        Cache::forget("campaign_active_calls_{$campaign->id}");
+
+        return Redirect::route('campaigns.index')
+            ->with('success', 'Campaign stopped successfully. Pending contacts will not be called.');
+    }
 }

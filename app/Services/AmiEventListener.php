@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Events\CampaignStatusUpdated;
+use App\Events\ContactStatusUpdated;
 use App\Jobs\ProcessCampaignCall;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
@@ -187,7 +189,7 @@ class AmiEventListener
         }
         $state = $event['ChannelStateDesc'] ?? '';
 
-        if ($state === 'Ringing') {
+if ($state === 'Ringing') {
             $this->logCall('CALL RINGING', [
                 'campaign_id' => $call['CAMPAIGN_ID'] ?? null,
                 'contact_id'  => $call['CONTACT_ID'] ?? null,
@@ -197,14 +199,15 @@ class AmiEventListener
             ]);
 
             if (!empty($call['CONTACT_ID'])) {
-            CampaignContact::where('id', $call['CONTACT_ID'])
-                    ->update([
-                        'status' => 'calling_ringing'
-                    ]);
+                $contact = CampaignContact::where('id', $call['CONTACT_ID'])->first();
+                if ($contact && $contact->status !== 'calling_ringing') {
+                    $contact->update(['status' => 'calling_ringing']);
+                    event(new ContactStatusUpdated($contact));
+                }
             }
         }
 
-        if ($state === 'Up') {
+if ($state === 'Up') {
             $this->answeredCalls[$uid] = true;
 
             $this->logCall('CALL ANSWERED', [
@@ -216,13 +219,12 @@ class AmiEventListener
             ]);
 
             if (!empty($call['CONTACT_ID'])) {
-            CampaignContact::where('id', $call['CONTACT_ID'])
-                ->update([
-                    'status' => 'attended'
-                ]);
+                $contact = CampaignContact::where('id', $call['CONTACT_ID'])->first();
+                if ($contact && $contact->status !== 'attended') {
+                    $contact->update(['status' => 'attended']);
+                    event(new ContactStatusUpdated($contact));
+                }
             }
-
-
         }
     }
 
@@ -296,11 +298,14 @@ class AmiEventListener
 
         if ($digit === '1') {
             if (!empty($call['CONTACT_ID'])) {
-                CampaignContact::where('id', $call['CONTACT_ID'])
-                    ->update([
+                $contact = CampaignContact::where('id', $call['CONTACT_ID'])->first();
+                if ($contact && $contact->status !== '1_pressed') {
+                    $contact->update([
                         'status' => '1_pressed',
                         'dtmf_status' => '1'
                     ]);
+                    event(new ContactStatusUpdated($contact));
+                }
             }
         }
     }
@@ -335,10 +340,11 @@ class AmiEventListener
         }
 
         if (!empty($call['CONTACT_ID'])) {
-            CampaignContact::where('id', $call['CONTACT_ID'])
-                ->update([
-                    'status' => $status
-                ]);
+            $contact = CampaignContact::where('id', $call['CONTACT_ID'])->first();
+            if ($contact && $contact->status !== $status) {
+                $contact->update(['status' => $status]);
+                event(new ContactStatusUpdated($contact));
+            }
         }
 
         $this->logCall('CALL FINISHED', [
@@ -428,6 +434,8 @@ class AmiEventListener
                 'status' => 'completed',
                 'completed_at' => now(),
             ]);
+
+            event(new CampaignStatusUpdated($campaign));
         }
     }
 
@@ -482,6 +490,7 @@ class AmiEventListener
 
         foreach ($staleContacts as $contact) {
             $contact->update(['status' => 'not_answered']);
+            event(new ContactStatusUpdated($contact));
             if ($contact->campaign) {
                 $contact->campaign->increment('failed_calls');
                 Cache::decrement("campaign_active_calls_{$contact->campaign_id}", 1);

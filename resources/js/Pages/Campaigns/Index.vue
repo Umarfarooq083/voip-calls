@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, toRefs } from 'vue';
+import { ref, toRefs, reactive, computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
     campaigns: {
@@ -38,6 +38,45 @@ const { filters } = toRefs(props);
 const search = ref(filters.value?.search || '');
 let timer = null;
 
+const localCampaigns = reactive([...props.campaigns]);
+const localInProgressCampaigns = reactive([...props.inProgressCampaigns]);
+
+const updatedCampaign = (campaign) => {
+    const index = localCampaigns.findIndex(c => c.id === campaign.id);
+    if (index > -1) {
+        Object.assign(localCampaigns[index], campaign);
+    } else {
+        localCampaigns.push(campaign);
+    }
+
+    const inProgressIndex = localInProgressCampaigns.findIndex(c => c.id === campaign.id);
+    if (inProgressIndex > -1) {
+        Object.assign(localInProgressCampaigns[inProgressIndex], campaign);
+    } else if (campaign.status === 'in_progress') {
+        localInProgressCampaigns.push(campaign);
+    }
+
+    if (inProgressIndex > -1 && campaign.status !== 'in_progress') {
+        localInProgressCampaigns.splice(inProgressIndex, 1);
+    }
+};
+
+onMounted(() => {
+    if (window.Echo) {
+        window.Echo.channel('campaigns')
+            .listen('.App\\Events\\CampaignStatusUpdated', (e) => {
+                updatedCampaign(e.campaign);
+            });
+
+        window.Echo.channel('campaigns')
+            .listen('.App\\Events\\ContactStatusUpdated', (e) => {
+                if (e.campaign) {
+                    updatedCampaign(e.campaign);
+                }
+            });
+    }
+});
+
 const handleSearch = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
@@ -51,6 +90,12 @@ const handleSearch = () => {
         );
     }, 900);
 };
+
+
+const failedContacts = (campaign) =>  {
+    return campaign.contacts.filter(contact => contact.status === 'failed').length;
+}
+
 
 
 const formatDate = (date) => {
@@ -109,6 +154,7 @@ const getStatusBadgeClass = (status) => {
             </h3>
         </template>
         <div class="py-12">
+            
             <div class="sm:px-6 lg:px-8">
                 <div class="mb-6 flex justify-between items-center">
                     <div class="flex space-x-2">
@@ -138,10 +184,10 @@ const getStatusBadgeClass = (status) => {
                     {{ error }}
                 </div>
 
-                <div v-if="inProgressCampaigns.length > 0" class="mb-6">
+                <div v-if="localInProgressCampaigns.length > 0" class="mb-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">In Progress Campaigns</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div v-for="campaign in inProgressCampaigns" :key="campaign.id" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div v-for="campaign in localInProgressCampaigns" :key="campaign.id" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                             <div class="flex justify-between items-start mb-3">
                                 <h4 class="text-sm font-semibold text-gray-900">{{ campaign.name }}</h4>
                                 <span :class="getStatusBadgeClass(campaign.status)"
@@ -228,7 +274,7 @@ const getStatusBadgeClass = (status) => {
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="campaign in campaigns" :key="campaign.id">
+                            <tr v-for="campaign in localCampaigns" :key="campaign.id">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ campaign.name }}
                                 </td>
@@ -251,15 +297,12 @@ const getStatusBadgeClass = (status) => {
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  <!-- {{ new Date(campaign?.started_at).toLocaleString() }}  -->
-                                    <!-- {{ new Date(campaign?.started_at).toLocaleDateString() }} -->
                                     {{ formatDate(campaign?.started_at) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ formatDate(campaign?.completed_at) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <!-- Start Calling Button -->
                                     <button style="padding: 8px;"
                                         v-if="campaign.status === 'pending'" 
                                         @click="startCalling(campaign.id)" 
@@ -272,8 +315,7 @@ const getStatusBadgeClass = (status) => {
                                         <!-- Start Calling -->
                                     </button>
 
-                                    <!-- Retry Failed Calls Button -->
-                                    <button style="padding: 8px;"
+                                    <button style="padding: 8px;" v-if="failedContacts(campaign) || campaign.status === 'paused'"
                                         @click="retryFailedCalls(campaign.id)" 
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors mr-2"
                                         title="Retry or resume calls"
@@ -284,7 +326,6 @@ const getStatusBadgeClass = (status) => {
                                         <!-- Retry Failed -->
                                     </button>
 
-                                    <!-- Stop Campaign Button -->
                                     <button v-if="campaign.status === 'in_progress'" style="padding: 8px;"
                                         @click="stopCampaign(campaign.id)" 
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors mr-2"
@@ -296,7 +337,6 @@ const getStatusBadgeClass = (status) => {
                                         <!-- Stop -->
                                     </button>
 
-                                    <!-- Edit Button -->
                                     <Link style="padding: 8px;"
                                         :href="route('campaigns.edit', { campaign: campaign.id })"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors mr-2"
@@ -308,7 +348,6 @@ const getStatusBadgeClass = (status) => {
                                         <!-- Edit -->
                                     </Link>
 
-                                    <!-- View Button -->
                                     <Link style="padding: 8px;"
                                         :href="route('campaigns.show', { campaign: campaign.id })"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors mr-2"
@@ -321,7 +360,6 @@ const getStatusBadgeClass = (status) => {
                                         <!-- View -->
                                     </Link>
 
-                                    <!-- Delete Button -->
                                     <button style="padding: 8px;"
                                         @click="deleteCampaign(campaign.id)" 
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"

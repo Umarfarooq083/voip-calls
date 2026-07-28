@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Events\CampaignStatusUpdated;
+use App\Events\ContactStatusUpdated;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use App\Services\AmiService;
@@ -59,6 +61,8 @@ class ProcessCampaignCall implements ShouldQueue
             'called_at' => now(),
         ]);
 
+        event(new ContactStatusUpdated($contact));
+
         Cache::put("campaign_active_calls_{$campaign->id}", $activeCalls + 1, 300);
         $campaign->increment('called_contacts');
 
@@ -89,6 +93,7 @@ class ProcessCampaignCall implements ShouldQueue
         if (! $result) {
             Cache::put("campaign_active_calls_{$campaign->id}", max(0, $activeCalls - 1), 300);
             $contact->update(['status' => 'failed']);
+            event(new ContactStatusUpdated($contact));
             $campaign->increment('failed_calls');
 
             $this->processNextInQueue($campaign);
@@ -141,6 +146,8 @@ class ProcessCampaignCall implements ShouldQueue
                 'status' => 'completed',
                 'completed_at' => now(),
             ]);
+
+            event(new CampaignStatusUpdated($campaign));
         }
     }
 
@@ -164,6 +171,7 @@ class ProcessCampaignCall implements ShouldQueue
 
                 if ($subContactsCompleted >= $totalSubContacts && $totalSubContacts > 0) {
                     $mainContact->update(['status' => 'completed']);
+                    event(new CampaignStatusUpdated($mainContact->campaign));
                 }
             }
         }
@@ -216,6 +224,8 @@ class ProcessCampaignCall implements ShouldQueue
                 'status' => 'completed',
                 'completed_at' => now(),
             ]);
+
+            event(new CampaignStatusUpdated($campaign));
         }
     }
 }

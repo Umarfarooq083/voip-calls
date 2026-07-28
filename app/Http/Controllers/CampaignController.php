@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CampaignStatusUpdated;
 use App\Http\Requests\StoreCampaignRequest;
 use App\Http\Requests\UpdateCampaignRequest;
 use App\Jobs\ProcessCampaignCall;
@@ -22,7 +23,6 @@ class CampaignController extends Controller
     public function index(Request $request)
     {
         $filters = $request->only(['status', 'search']);
-
         $campaigns = app(CampaignService::class)->list($filters);
         $inProgressCampaignsWithCounts = Campaign::where('status', 'in_progress')
             ->with(['extension', 'contacts'])
@@ -46,7 +46,6 @@ class CampaignController extends Controller
                 ];
             });
             // 'pending','calling','called','calling_ringing','rejected','not_answered','attended','1_pressed','success','successful','failed','skipped','busy'
-        // dd($inProgressCampaignsWithCounts);
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns->items(),
             'filters' => $filters,
@@ -197,6 +196,8 @@ class CampaignController extends Controller
             ProcessCampaignCall::dispatch($contact->id, $campaign->id);
         }
 
+        event(new CampaignStatusUpdated($campaign));
+
         return Redirect::route('campaigns.index')
             ->with('success', 'Campaign started successfully. Calls are being processed.');
     }
@@ -206,12 +207,6 @@ class CampaignController extends Controller
         $retryStatuses = ['failed', 'busy', 'not_answered'];
         CampaignContact::where('campaign_id', $campaign->id)
             ->whereIn('status', $retryStatuses)->update(['status'=>'pending']);
-        // dd($updateStatusToPending);
-        // $retryContacts = CampaignContact::where('campaign_id', $campaign->id)
-        //     ->whereIn('status', $retryStatuses)
-        //     ->orderBy('id')
-        //     ->limit($campaign->no_of_calls)
-        //     ->get();
 
         $retryContacts = CampaignContact::where('campaign_id', $campaign->id)
             ->where('status', 'pending')
@@ -219,10 +214,12 @@ class CampaignController extends Controller
             ->limit($campaign->no_of_calls)
             ->get();
 
-
-         $campaign->update([
+        $campaign->update([
             'status' => 'in_progress'
-         ]);
+        ]);
+
+        event(new CampaignStatusUpdated($campaign));
+
         foreach ($retryContacts as $contact) {
             $contact->update(['status' => 'pending']);
             ProcessCampaignCall::dispatch($contact->id, $campaign->id);
@@ -245,6 +242,8 @@ class CampaignController extends Controller
         ]);
 
         Cache::forget("campaign_active_calls_{$campaign->id}");
+
+        event(new CampaignStatusUpdated($campaign));
 
         return Redirect::route('campaigns.index')
             ->with('success', 'Campaign stopped successfully. Pending contacts will not be called.');

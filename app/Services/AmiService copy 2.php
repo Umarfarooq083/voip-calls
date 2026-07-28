@@ -412,7 +412,8 @@ class AmiService
      */
     public function getChannels(): array
     {
-        return $this->command('core show channels');
+        // return $this->command('core show channels');
+        return $this->command('queue show');
     }
 
   

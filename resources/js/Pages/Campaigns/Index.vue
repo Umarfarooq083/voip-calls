@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, toRefs, reactive, computed, onMounted, onUnmounted } from 'vue';
+import { watch } from 'vue';
 
 const props = defineProps({
     campaigns: {
@@ -33,6 +34,28 @@ const props = defineProps({
         default: () => [],
     },
 });
+
+
+watch(
+    () => props.campaigns,
+    (campaigns) => {
+        localCampaigns.splice(0, localCampaigns.length, ...campaigns);
+    },
+    { deep: true }
+);
+
+watch(
+    () => props.inProgressCampaigns,
+    (campaigns) => {
+        localInProgressCampaigns.splice(
+            0,
+            localInProgressCampaigns.length,
+            ...campaigns
+        );
+    },
+    { deep: true }
+);
+
 
 const { filters } = toRefs(props);
 const search = ref(filters.value?.search || '');
@@ -92,9 +115,9 @@ const handleSearch = () => {
 };
 
 
-const failedContacts = (campaign) =>  {
-    return campaign.contacts.filter(contact => contact.status === 'failed').length;
-}
+// const failedContacts = (campaign) =>  {
+//     return campaign.contacts.filter(contact => contact.status === 'failed').length;
+// }
 
 
 
@@ -201,20 +224,20 @@ const getStatusBadgeClass = (status) => {
                                     <p class="text-xs text-gray-500">Pending</p>
                                 </div>
                                 <div>
-                                    <p class="text-lg font-bold text-red-600">{{ campaign.status_counts.failed }}</p>
-                                    <p class="text-xs text-gray-500">Failed</p>
+                                    <p class="text-lg font-bold text-green-600">{{ campaign.status_counts.calling_ringing }}</p>
+                                    <p class="text-xs text-gray-500">Ringing</p>
                                 </div>
                                 <div>
                                     <p class="text-lg font-bold text-green-600">{{ campaign.status_counts.attended }}</p>
                                     <p class="text-xs text-gray-500">Attended</p>
                                 </div>
-                                <div>
-                                    <p class="text-lg font-bold text-green-600">{{ campaign.status_counts.calling_ringing }}</p>
-                                    <p class="text-xs text-gray-500">Ringing</p>
-                                </div>
-                                <div>
+                                 <div>
                                     <p class="text-lg font-bold text-green-600">{{ campaign.status_counts['1_pressed'] }}</p>
                                     <p class="text-xs text-gray-500">Move to Agent</p>
+                                </div>
+                                <div>
+                                    <p class="text-lg font-bold text-red-600">{{ campaign.status_counts.failed }}</p>
+                                    <p class="text-xs text-gray-500">Failed</p>
                                 </div>
                                 <div>
                                     <p class="text-lg font-bold text-green-600">{{ campaign.status_counts.successful }}</p>
@@ -274,7 +297,7 @@ const getStatusBadgeClass = (status) => {
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="campaign in localCampaigns" :key="campaign.id">
+                            <tr v-for="campaign in campaigns" :key="campaign.id">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ campaign.name }}
                                 </td>
@@ -315,7 +338,7 @@ const getStatusBadgeClass = (status) => {
                                         <!-- Start Calling -->
                                     </button>
 
-                                    <button style="padding: 8px;" v-if="failedContacts(campaign) || campaign.status === 'paused'"
+                                    <button style="padding: 8px;"  v-if="campaign?.failed_calls || campaign.status === 'paused'"
                                         @click="retryFailedCalls(campaign.id)" 
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors mr-2"
                                         title="Retry or resume calls"

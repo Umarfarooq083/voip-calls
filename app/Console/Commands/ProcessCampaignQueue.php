@@ -28,19 +28,23 @@ class ProcessCampaignQueue extends Command
 
     protected function processCampaign(Campaign $campaign): void
     {
-        $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
+        $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
+
+        $activeContactCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $specialStatuses)
+            ->count();
 
         Log::info('PROCESS_CAMPAIGN_QUEUE', [
             'campaign_id' => $campaign->id,
-            'active_calls' => $activeCalls,
+            'active_contacts' => $activeContactCount,
             'no_of_calls' => $campaign->no_of_calls,
         ]);
 
-        if ($activeCalls >= $campaign->no_of_calls) {
+        if ($activeContactCount >= $campaign->no_of_calls) {
             return;
         }
 
-        $availableSlots = $campaign->no_of_calls - $activeCalls;
+        $availableSlots = $campaign->no_of_calls - $activeContactCount;
 
         $queuedContacts = CampaignContact::where('campaign_id', $campaign->id)
             ->where('status', 'queued')
@@ -53,7 +57,7 @@ class ProcessCampaignQueue extends Command
             $job->handle();
         }
 
-        if ($queuedContacts->isEmpty() && $activeCalls < $campaign->no_of_calls) {
+        if ($queuedContacts->isEmpty() && $activeContactCount < $campaign->no_of_calls) {
             $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)
                 ->where('status', 'pending')
                 ->orderBy('id')
@@ -82,9 +86,13 @@ class ProcessCampaignQueue extends Command
             $campaign->increment('failed_calls');
             Cache::decrement("campaign_active_calls_{$campaign->id}", 1);
 
-            $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
+            $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
 
-            if ($activeCalls >= $campaign->no_of_calls) {
+            $activeContactCount = CampaignContact::where('campaign_id', $campaign->id)
+                ->whereIn('status', $specialStatuses)
+                ->count();
+
+            if ($activeContactCount >= $campaign->no_of_calls) {
                 return;
             }
 

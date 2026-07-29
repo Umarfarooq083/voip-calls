@@ -25,7 +25,7 @@ class CampaignController extends Controller
         $filters = $request->only(['status', 'search']);
         $campaigns = app(CampaignService::class)->list($filters);
         $inProgressCampaignsWithCounts = Campaign::where('status', 'in_progress')
-            ->with(['extension', 'contacts'])
+            ->with(['contacts'])
             ->get()
             ->map(function ($campaign) {
                 $statusCounts = $campaign->contacts->groupBy('status')->map->count();
@@ -45,7 +45,7 @@ class CampaignController extends Controller
                     ],
                 ];
             });
-            // 'pending','calling','called','calling_ringing','rejected','not_answered','attended','1_pressed','success','successful','failed','skipped','busy'
+
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns->items(),
             'filters' => $filters,
@@ -92,10 +92,22 @@ class CampaignController extends Controller
 
     public function show(Campaign $campaign)
     {
-        $campaign->load(['contacts']);
-        $statusCounts = $campaign->contacts->groupBy('status')->map->count();
+        $contacts = CampaignContact::where('campaign_id', $campaign->id)
+            ->orderBy('id')
+            ->paginate(25)
+            ->withQueryString();
+
+        $statusCounts = CampaignContact::where('campaign_id', $campaign->id)
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $dtmfCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->where('dtmf_status', 1)
+            ->count();
 
         return Inertia::render('Campaigns/Show', [
+
             'campaign' => [
                 'id' => $campaign->id,
                 'name' => $campaign->name,
@@ -110,17 +122,29 @@ class CampaignController extends Controller
                 'started_at' => $campaign->started_at,
                 'completed_at' => $campaign->completed_at,
             ],
-            'contacts' => $campaign->contacts,
-            'statusCounts' => [
-                'pending' => $statusCounts->get('pending', 0),
-                'calling' => $statusCounts->get('calling', 0),
-                'ringing' => $statusCounts->get('calling_ringing', 0),
-                'failed' => $statusCounts->get('failed', 0),
-                'dtmf_status' => $campaign['contacts']->where('dtmf_status', 1)->count(),
-                'success' => $statusCounts->get('success', 0) + $statusCounts->get('successful', 0),
-                'busy' => $statusCounts->get('busy', 0),
-                'not_answered' => $statusCounts->get('not_answered', 0),
+
+            'contacts' => $contacts->items(),
+
+            'meta' => [
+                'current_page' => $contacts->currentPage(),
+                'last_page' => $contacts->lastPage(),
+                'per_page' => $contacts->perPage(),
+                'total' => $contacts->total(),
             ],
+
+            'links' => $contacts->linkCollection(),
+
+            'statusCounts' => [
+                'pending' => $statusCounts['pending'] ?? 0,
+                'calling' => $statusCounts['calling'] ?? 0,
+                'ringing' => $statusCounts['calling_ringing'] ?? 0,
+                'failed' => $statusCounts['failed'] ?? 0,
+                'dtmf_status' => $dtmfCount,
+                'success' => ($statusCounts['success'] ?? 0) + ($statusCounts['successful'] ?? 0),
+                'busy' => $statusCounts['busy'] ?? 0,
+                'not_answered' => $statusCounts['not_answered'] ?? 0,
+            ],
+
             'success' => session('success'),
         ]);
     }
@@ -131,12 +155,10 @@ class CampaignController extends Controller
             ->table('ivr_details')
             ->get();
 
-        //  dd($campaign->trunk_channalId);
         $trunks = DB::connection('asterisk')
             ->table('trunks')
             ->get();
 
-        // dd($ivrs);
         return Inertia::render('Campaigns/Edit', [
             'campaign' => [
                 'id' => $campaign->id,
@@ -184,12 +206,20 @@ class CampaignController extends Controller
             'started_at' => now(),
         ]);
 
-        Cache::put("campaign_active_calls_{$campaign->id}", 0, 300);
+        $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
+
+        $activeContactCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $specialStatuses)
+            ->count();
+
+        Cache::put("campaign_active_calls_{$campaign->id}", $activeContactCount, 300);
+
+        $availableSlots = max(0, $campaign->no_of_calls - $activeContactCount);
 
         $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)
             ->where('status', 'pending')
             ->orderBy('id')
-            ->limit($campaign->no_of_calls)
+            ->limit($availableSlots)
             ->get();
 
         foreach ($pendingContacts as $contact) {
@@ -206,12 +236,20 @@ class CampaignController extends Controller
     {
         $retryStatuses = ['failed', 'busy', 'not_answered'];
         CampaignContact::where('campaign_id', $campaign->id)
-            ->whereIn('status', $retryStatuses)->update(['status'=>'pending']);
+            ->whereIn('status', $retryStatuses)->update(['status' => 'pending']);
+
+        $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
+
+        $activeContactCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $specialStatuses)
+            ->count();
+
+        $availableSlots = max(0, $campaign->no_of_calls - $activeContactCount);
 
         $retryContacts = CampaignContact::where('campaign_id', $campaign->id)
             ->where('status', 'pending')
             ->orderBy('id')
-            ->limit($campaign->no_of_calls)
+            ->limit($availableSlots)
             ->get();
 
         $campaign->update([

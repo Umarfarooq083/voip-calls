@@ -48,9 +48,13 @@ class ProcessCampaignCall implements ShouldQueue
             return;
         }
 
-        $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
+        $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
 
-        if ($activeCalls >= $campaign->no_of_calls) {
+        $activeContactCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $specialStatuses)
+            ->count();
+
+        if ($activeContactCount >= $campaign->no_of_calls) {
             $contact->update(['status' => 'queued']);
 
             return;
@@ -63,7 +67,7 @@ class ProcessCampaignCall implements ShouldQueue
 
         event(new ContactStatusUpdated($contact));
 
-        Cache::put("campaign_active_calls_{$campaign->id}", $activeCalls + 1, 300);
+        Cache::put("campaign_active_calls_{$campaign->id}", $activeContactCount + 1, 300);
         $campaign->increment('called_contacts');
 
         $callUuid = (string) Str::uuid();
@@ -91,7 +95,7 @@ class ProcessCampaignCall implements ShouldQueue
         ]);
 
         if (! $result) {
-            Cache::put("campaign_active_calls_{$campaign->id}", max(0, $activeCalls - 1), 300);
+            Cache::put("campaign_active_calls_{$campaign->id}", max(0, $activeContactCount - 1), 300);
             $contact->update(['status' => 'failed']);
             event(new ContactStatusUpdated($contact));
             $campaign->increment('failed_calls');
@@ -102,9 +106,13 @@ class ProcessCampaignCall implements ShouldQueue
 
     protected function processNextInQueue(Campaign $campaign): void
     {
-        $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
+        $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
 
-        if ($activeCalls >= $campaign->no_of_calls) {
+        $activeContactCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $specialStatuses)
+            ->count();
+
+        if ($activeContactCount >= $campaign->no_of_calls) {
             $this->checkCompletion($campaign);
             return;
         }
@@ -124,7 +132,7 @@ class ProcessCampaignCall implements ShouldQueue
         $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)
             ->where('status', 'pending')
             ->orderBy('id')
-            ->limit($campaign->no_of_calls - $activeCalls)
+            ->limit($campaign->no_of_calls - $activeContactCount)
             ->get();
 
         foreach ($pendingContacts as $contact) {
@@ -176,9 +184,13 @@ class ProcessCampaignCall implements ShouldQueue
             }
         }
 
-        $activeCalls = Cache::get("campaign_active_calls_{$campaign->id}", 0);
+        $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
 
-        if ($activeCalls >= $campaign->no_of_calls) {
+        $activeContactCount = CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $specialStatuses)
+            ->count();
+
+        if ($activeContactCount >= $campaign->no_of_calls) {
             self::checkCampaignCompletion($campaign);
             return;
         }
@@ -198,7 +210,7 @@ class ProcessCampaignCall implements ShouldQueue
         $pendingContacts = CampaignContact::where('campaign_id', $campaign->id)
             ->where('status', 'pending')
             ->orderBy('id')
-            ->limit($campaign->no_of_calls - $activeCalls)
+            ->limit($campaign->no_of_calls - $activeContactCount)
             ->get();
 
         foreach ($pendingContacts as $contact) {

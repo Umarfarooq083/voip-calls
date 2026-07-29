@@ -12,6 +12,14 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+      meta: {
+        type: Object,
+        default: () => ({}),
+    },
+    links: {
+        type: Object,
+        default: () => ({}),
+    },
     success: {
         type: String,
         default: '',
@@ -219,6 +227,37 @@ const deleteContact = (id) => {
                         </div>
                     </div>
                 </div>
+
+                <!-- <div class="mt-4 flex justify-center">
+                    <div class="flex space-x-2">
+                        <button v-if="meta.current_page > 1" @click="router.get(links.prev)"
+                            class="px-3 py-1 rounded-md border border-gray-300 text-sm">
+                            Previous
+                        </button>
+                        <button v-if="meta.current_page < meta.last_page" @click="router.get(links.next)"
+                            class="px-3 py-1 rounded-md border border-gray-300 text-sm">
+                            Next
+                        </button>
+                    </div>
+                </div> -->
+
+
+          <div class="flex justify-center mt-6 space-x-1 flex-wrap">
+            <button
+                v-for="link in links"
+                :key="link.label"
+                v-html="link.label"
+                :disabled="!link.url"
+                @click="link.url && router.visit(link.url)"
+                :class="[
+                    'px-3 py-2 rounded border text-sm',
+                    link.active
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-white hover:bg-gray-100',
+                    !link.url ? 'opacity-50 cursor-not-allowed' : ''
+                ]"
+            />
+        </div>
 
                 <div class="mt-4">
                     <Link :href="route('campaigns.index')"

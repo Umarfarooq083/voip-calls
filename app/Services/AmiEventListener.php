@@ -79,7 +79,7 @@ class AmiEventListener
             $line = trim(fgets($this->socket));
             $lineCount++;
 
-            if ($lineCount > 100000) {
+            if ($lineCount > 10000000) {
                 Log::warning('AMI LISTENER LINE LIMIT REACHED');
                 break;
             }
@@ -386,9 +386,13 @@ if ($state === 'Up') {
             return;
         }
 
-        $activeCalls = Cache::get("campaign_active_calls_{$campaignId}", 0);
+        $specialStatuses = ['calling', 'called', 'calling_ringing', 'attended', '1_pressed'];
 
-        if ($activeCalls >= $campaign->no_of_calls) {
+        $activeContactCount = CampaignContact::where('campaign_id', $campaignId)
+            ->whereIn('status', $specialStatuses)
+            ->count();
+
+        if ($activeContactCount >= $campaign->no_of_calls) {
             $this->checkCompletion($campaign);
             return;
         }
@@ -408,7 +412,7 @@ if ($state === 'Up') {
         $pendingContacts = CampaignContact::where('campaign_id', $campaignId)
             ->where('status', 'pending')
             ->orderBy('id')
-            ->limit($campaign->no_of_calls - $activeCalls)
+            ->limit($campaign->no_of_calls - $activeContactCount)
             ->get();
 
         foreach ($pendingContacts as $contact) {

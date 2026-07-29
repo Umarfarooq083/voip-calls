@@ -90,9 +90,20 @@ class CampaignController extends Controller
             ->with('success', 'Campaign created successfully.');
     }
 
-    public function show(Campaign $campaign)
+    public function show(Campaign $campaign, Request $request)
     {
+        $filters = $request->only(['status', 'search']);
+
         $contacts = CampaignContact::where('campaign_id', $campaign->id)
+            ->when($filters['status'] ?? null, function ($query, $status) {
+                return $query->where('status', $status);
+            })
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('customer_name', 'like', "%{$search}%")
+                      ->orWhere('phone_number', 'like', "%{$search}%");
+                });
+            })
             ->orderBy('id')
             ->paginate(25)
             ->withQueryString();
@@ -124,6 +135,8 @@ class CampaignController extends Controller
             ],
 
             'contacts' => $contacts->items(),
+
+            'filters' => $filters,
 
             'meta' => [
                 'current_page' => $contacts->currentPage(),

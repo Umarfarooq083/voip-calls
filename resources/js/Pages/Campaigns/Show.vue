@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, toRefs, reactive, computed, watch, onUnmounted } from 'vue';
 
 const props = defineProps({
     campaign: {
@@ -12,7 +12,11 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-      meta: {
+    filters: {
+        type: Object,
+        default: () => ({}),
+    },
+    meta: {
         type: Object,
         default: () => ({}),
     },
@@ -32,6 +36,42 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+});
+
+const { filters } = toRefs(props);
+const search = ref(filters.value?.search || '');
+const statusFilter = ref(filters.value?.status || '');
+let timer = null;
+
+watch(search, () => {
+    statusFilter.value = '';
+});
+
+const handleSearch = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        router.get(route('campaigns.show', { campaign: props.campaign.id }), {
+            search: search.value,
+            status: statusFilter.value,
+        }, {
+            preserveState: true,
+            replace: true,
+        });
+    }, 900);
+};
+
+const handleStatusChange = () => {
+    router.get(route('campaigns.show', { campaign: props.campaign.id }), {
+        search: search.value,
+        status: statusFilter.value,
+    }, {
+        preserveState: true,
+        replace: true,
+    });
+};
+
+onUnmounted(() => {
+    if (timer) clearTimeout(timer);
 });
 
 const getStatusBadgeClass = (status) => {
@@ -169,8 +209,28 @@ const deleteContact = (id) => {
                     <div class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Contacts ({{ contacts.length }})</h3>
                         
+                        <div class="mb-4 flex space-x-2">
+                            <input v-model="search" type="text" placeholder="Search..."
+                                class="border border-gray-300 rounded-md px-3 py-2 w-64" @input="handleSearch" />
+                            <select v-model="statusFilter" @change="handleStatusChange"
+                                class="border border-gray-300 rounded-md px-3 py-2">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="calling">Calling</option>
+                                <option value="called">Called</option>
+                                <option value="calling_ringing">Ringing</option>
+                                <option value="attended">Attended</option>
+                                <option value="1_pressed">Move to Agent</option>
+                                <option value="successful">Successful</option>
+                                <option value="failed">Failed</option>
+                                <option value="busy">Busy</option>
+                                <option value="not_answered">Not Answered</option>
+                                <option value="skipped">Skipped</option>
+                            </select>
+                        </div>
+
                         <div v-if="contacts.length === 0" class="text-gray-500 py-4">
-                            No contacts imported yet.
+                            No contacts found.
                         </div>
 
                         <div v-else class="overflow-x-auto">

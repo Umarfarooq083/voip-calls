@@ -64,6 +64,20 @@ return [
             ]) : [],
         ],
 
+
+        'asterisk' => [
+            'driver' => 'mysql',
+            'host' => env('ASTERISK_DB_HOST', '127.0.0.1'),
+            'port' => env('ASTERISK_DB_PORT', '3306'),
+            'database' => env('ASTERISK_DB_DATABASE', 'asterisk'),
+            'username' => env('ASTERISK_DB_USERNAME', 'root'),
+            'password' => env('ASTERISK_DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix' => '',
+        ],
+
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

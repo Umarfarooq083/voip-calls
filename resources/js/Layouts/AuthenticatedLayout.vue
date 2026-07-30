@@ -39,6 +39,18 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
+                                <NavLink
+                                    :href="route('extensions.index')"
+                                    :active="route().current('extensions.index')"
+                                >
+                                    Extensions
+                                </NavLink>
+                                <NavLink
+                                    :href="route('campaigns.index')"
+                                    :active="route().current('campaigns.index')"
+                                >
+                                    Campaign
+                                </NavLink>
                             </div>
                         </div>
 

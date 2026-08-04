@@ -37,7 +37,7 @@ class CampaignController extends Controller
                     'started_at' => $campaign->started_at,
                     'status_counts' => [
                         'pending' => $statusCounts->get('pending', 0),
-                        'calling_ringing' => $statusCounts->get('calling_ringing', 0),
+                        'calling_ringing' => $statusCounts->get('calling_ringing', 0) + $statusCounts->get('calling', 0),
                         'attended' => $statusCounts->get('attended', 0),
                         'failed' => $statusCounts->get('failed', 0) + $statusCounts->get('busy', 0) + $statusCounts->get('not_answered', 0),
                         '1_pressed' => $statusCounts->get('1_pressed', 0),

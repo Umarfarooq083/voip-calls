@@ -124,6 +124,10 @@ class AmiEventListener
                 $this->onNewState($event);
                 break;
 
+            case 'Dial':
+                $this->onDial($event);
+                break;
+
             case 'DTMF':
                 $this->onDtmf($event);
                 break;
@@ -162,69 +166,148 @@ class AmiEventListener
    protected function onNewChannel(array $event): void
     {
         $uid = $event['Uniqueid'] ?? null;
+        $channel = $event['Channel'] ?? '';
         if (!$uid || !isset($this->calls[$uid])) return;
         $call = $this->getCall($uid);
         if (!$call) {
             return;
         }
-
 
         $this->logCall('CALL CREATED', [
             'campaign_id' => $call['CAMPAIGN_ID'] ?? null,
             'contact_id'  => $call['CONTACT_ID'] ?? null,
             'phone'       => $call['PHONE'] ?? null,
             'uid'         => $uid,
+            'channel'     => $channel,
         ]);
     }
 
     protected function onNewState(array $event): void
     {
         $uid = $event['Uniqueid'] ?? null;
-        if (!$uid || !isset($this->calls[$uid])) return;
+        if (!$uid) return;
 
-        $call = $this->getCall($uid);
-
-        if (!$call) {
-            return;
-        }
         $state = $event['ChannelStateDesc'] ?? '';
+        $parentUid = $event['ParentUniqueid'] ?? null;
 
-if ($state === 'Ringing') {
-            $this->logCall('CALL RINGING', [
-                'campaign_id' => $call['CAMPAIGN_ID'] ?? null,
-                'contact_id'  => $call['CONTACT_ID'] ?? null,
-                'phone'       => $call['PHONE'] ?? null,
-                'state'       => $state,
-                'uid'         => $uid,
-            ]);
+        $call = null;
+        $parentCall = null;
 
-            if (!empty($call['CONTACT_ID'])) {
-                $contact = CampaignContact::where('id', $call['CONTACT_ID'])->first();
+        if (isset($this->calls[$uid])) {
+            $call = $this->calls[$uid];
+        }
+
+        if ($parentUid && isset($this->calls[$parentUid])) {
+            $parentCall = $this->calls[$parentUid];
+        }
+
+        $contactId = null;
+
+        if ($state === 'Ringing') {
+            if ($parentCall && !empty($parentCall['CONTACT_ID'])) {
+                $contactId = $parentCall['CONTACT_ID'];
+            } elseif ($call && !empty($call['CONTACT_ID'])) {
+                $contactId = $call['CONTACT_ID'];
+            }
+
+            if (!$contactId) {
+                if (!empty($event['CallerIDNum'])) {
+                    $phoneFromCallerId = ltrim($event['CallerIDNum'], '0');
+                    $contact = CampaignContact::where('phone_number', $phoneFromCallerId)
+                        ->whereIn('status', ['calling', 'calling_ringing'])
+                        ->first();
+                    if (!$contact) {
+                        $phoneWithZero = '0' . $phoneFromCallerId;
+                        $contact = CampaignContact::where('phone_number', $phoneWithZero)
+                            ->whereIn('status', ['calling', 'calling_ringing'])
+                            ->first();
+                    }
+                    $contactId = $contact?->id;
+                } else {
+                    $channel = $event['Channel'] ?? '';
+                    if (preg_match('/0?(\d{8,12})/', $channel, $matches)) {
+                        $phoneFromChannel = $matches[1];
+                        $phone = ltrim($phoneFromChannel, '0');
+                        $contact = CampaignContact::where('phone_number', $phone)
+                            ->whereIn('status', ['calling', 'calling_ringing'])
+                            ->first();
+                        if (!$contact) {
+                            $phoneWithZero = '0' . $phone;
+                            $contact = CampaignContact::where('phone_number', $phoneWithZero)
+                                ->whereIn('status', ['calling', 'calling_ringing'])
+                                ->first();
+                        }
+                        $contactId = $contact?->id;
+                    }
+                }
+            }
+
+            if ($contactId) {
+                $contact = CampaignContact::where('id', $contactId)->first();
                 if ($contact && $contact->status !== 'calling_ringing') {
                     $contact->update(['status' => 'calling_ringing']);
                     event(new ContactStatusUpdated($contact));
                 }
             }
+
+            $this->logCall('CALL RINGING', [
+                'uid' => $uid,
+                'parent_uid' => $parentUid,
+                'contact_id' => $contactId,
+                'state' => $state,
+            ]);
         }
 
-if ($state === 'Up') {
+        if ($state === 'Up') {
             $this->answeredCalls[$uid] = true;
 
-            $this->logCall('CALL ANSWERED', [
-                'campaign_id' => $call['CAMPAIGN_ID'] ?? null,
-                'contact_id'  => $call['CONTACT_ID'] ?? null,
-                'phone'       => $call['PHONE'] ?? null,
-                'state'       => $state,
-                'uid'         => $uid,
-            ]);
+            if ($parentCall) {
+                $this->logCall('CALL ANSWERED', [
+                    'campaign_id' => $parentCall['CAMPAIGN_ID'] ?? null,
+                    'contact_id'  => $parentCall['CONTACT_ID'] ?? null,
+                    'phone'       => $parentCall['PHONE'] ?? null,
+                    'state'       => $state,
+                    'uid'         => $uid,
+                ]);
 
-            if (!empty($call['CONTACT_ID'])) {
-                $contact = CampaignContact::where('id', $call['CONTACT_ID'])->first();
-                if ($contact && $contact->status !== 'attended') {
-                    $contact->update(['status' => 'attended']);
-                    event(new ContactStatusUpdated($contact));
+                if (!empty($parentCall['CONTACT_ID'])) {
+                    $contact = CampaignContact::where('id', $parentCall['CONTACT_ID'])->first();
+                    if ($contact && $contact->status !== 'attended') {
+                        $contact->update(['status' => 'attended']);
+                        event(new ContactStatusUpdated($contact));
+                    }
+                }
+            } elseif ($call) {
+                $this->logCall('CALL ANSWERED', [
+                    'campaign_id' => $call['CAMPAIGN_ID'] ?? null,
+                    'contact_id'  => $call['CONTACT_ID'] ?? null,
+                    'phone'       => $call['PHONE'] ?? null,
+                    'state'       => $state,
+                    'uid'         => $uid,
+                ]);
+
+                if (!empty($call['CONTACT_ID'])) {
+                    $contact = CampaignContact::where('id', $call['CONTACT_ID'])->first();
+                    if ($contact && $contact->status !== 'attended') {
+                        $contact->update(['status' => 'attended']);
+                        event(new ContactStatusUpdated($contact));
+                    }
                 }
             }
+        }
+    }
+
+    protected function onDial(array $event): void
+    {
+        $uid = $event['Uniqueid'] ?? null;
+        if (!$uid) return;
+
+        if (!isset($this->calls[$uid])) {
+            $this->calls[$uid] = [];
+        }
+
+        if (!empty($event['CallerIDNum'])) {
+            $this->calls[$uid]['DIAL_CALLER_ID'] = $event['CallerIDNum'];
         }
     }
 
@@ -313,25 +396,41 @@ if ($state === 'Up') {
     protected function onHangup(array $event): void
     {
         $uid = $event['Uniqueid'] ?? null;
-        if (!$uid || !isset($this->calls[$uid])) return;
+        if (!$uid) return;
 
-        $call = $this->getCall($uid);
+        $call = $this->getCall($uid) ?? null;
+        $parentUid = $event['ParentUniqueid'] ?? null;
+
+        if ($parentUid && isset($this->calls[$parentUid])) {
+            $parentCall = $this->calls[$parentUid];
+            if (!empty($parentCall['CONTACT_ID'])) {
+                $call = $parentCall;
+            }
+        }
+
         if (!$call) {
             unset(
                 $this->calls[$uid],
                 $this->answeredCalls[$uid],
                 $this->bridgedCalls[$uid]
             );
+            if ($parentUid) {
+                unset($this->calls[$parentUid]);
+            }
             return;
         }
-
 
         $cause = $event['Cause'] ?? null;
         $causeTxt = $event['Cause-txt'] ?? null;
 
         $status = 'failed';
 
-        if (isset($this->answeredCalls[$uid])) {
+        $isAnswered = isset($this->answeredCalls[$uid]) || 
+                     ($parentUid && isset($this->answeredCalls[$parentUid])) ||
+                     isset($this->bridgedCalls[$uid]) ||
+                     ($parentUid && isset($this->bridgedCalls[$parentUid]));
+
+        if ($isAnswered) {
             $status = 'successful';
         } elseif (in_array($cause, ['17'])) {
             $status = 'busy';

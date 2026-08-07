@@ -27,11 +27,11 @@ class AmiEventListener
         $user = config('ami.username');
         $secret = config('ami.secret');
 
-        Log::info('AMI CONNECTION ATTEMPT', [
-            'host' => $host,
-            'port' => $port,
-            'user' => $user,
-        ]);
+        // Log::info('AMI CONNECTION ATTEMPT', [
+        //     'host' => $host,
+        //     'port' => $port,
+        //     'user' => $user,
+        // ]);
 
         $this->socket = fsockopen($host, $port, $errno, $errstr, 10);
 
@@ -43,7 +43,7 @@ class AmiEventListener
             throw new \Exception("AMI Connection Failed: {$errstr}");
         }
 
-        Log::info('AMI SOCKET CONNECTED');
+        // Log::info('AMI SOCKET CONNECTED');
 
         $login =
             "Action: Login\r\n".
@@ -62,7 +62,7 @@ class AmiEventListener
                 break;
             }
 
-            Log::info('AMI LOGIN RESPONSE', ['line' => $line]);
+            // Log::info('AMI LOGIN RESPONSE', ['line' => $line]);
         }
 
         Log::info('AMI LOGIN COMPLETE', ['response' => $loginResponse]);
@@ -73,7 +73,7 @@ class AmiEventListener
         $event = [];
         $lineCount = 0;
 
-        Log::info('AMI LISTENER STARTED');
+        // Log::info('AMI LISTENER STARTED');
 
         while (! feof($this->socket)) {
             $line = trim(fgets($this->socket));
@@ -102,7 +102,7 @@ class AmiEventListener
             }
         }
 
-        Log::info('AMI LISTENER STOPPED');
+        // Log::info('AMI LISTENER STOPPED');
     }
 
    protected function handleEvent(array $event): void
@@ -184,6 +184,7 @@ class AmiEventListener
 
     protected function onNewState(array $event): void
     {
+        //commented
         $uid = $event['Uniqueid'] ?? null;
         if (!$uid) return;
 
@@ -313,12 +314,12 @@ class AmiEventListener
 
     protected function onDialBegin(array $event): void
     {
-        Log::info('DIAL BEGIN', $event);
+        // Log::info('DIAL BEGIN', $event);
     }
 
     protected function onDialEnd(array $event): void
     {
-        Log::info('DIAL END', $event);
+        // Log::info('DIAL END', $event);
     }
 
     protected function onBridgeEnter(array $event): void
@@ -329,7 +330,7 @@ class AmiEventListener
             $this->bridgedCalls[$uid] = true;
         }
 
-        Log::info('BRIDGE ENTER => onBridgeEnter', $event);
+        // Log::info('BRIDGE ENTER => onBridgeEnter', $event);
         //   $uid = $event['Uniqueid'] ?? null;
         // if ($uid && isset($this->calls[$uid])) {
         //     $this->bridgedCalls[$uid] = true;
@@ -612,16 +613,16 @@ class AmiEventListener
 
     protected function logCall(string $stage, array $data = []): void
     {
-        Log::info($stage, [
-            'campaign_id' => $data['campaign_id'] ?? null,
-            'contact_id'  => $data['contact_id'] ?? null,
-            'phone'       => $data['phone'] ?? null,
-            'state'       => $data['state'] ?? null,
-            'cause'       => $data['cause'] ?? null,
-            'cause_txt'   => $data['cause_txt'] ?? null,
-            'digit'       => $data['digit'] ?? null,
-            'uid'         => $data['uid'] ?? null,
-        ]);
+        // Log::info($stage, [
+        //     'campaign_id' => $data['campaign_id'] ?? null,
+        //     'contact_id'  => $data['contact_id'] ?? null,
+        //     'phone'       => $data['phone'] ?? null,
+        //     'state'       => $data['state'] ?? null,
+        //     'cause'       => $data['cause'] ?? null,
+        //     'cause_txt'   => $data['cause_txt'] ?? null,
+        //     'digit'       => $data['digit'] ?? null,
+        //     'uid'         => $data['uid'] ?? null,
+        // ]);
     }
 
 

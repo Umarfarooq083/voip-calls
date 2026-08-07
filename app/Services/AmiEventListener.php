@@ -184,6 +184,7 @@ class AmiEventListener
 
     protected function onNewState(array $event): void
     {
+        //commented
         $uid = $event['Uniqueid'] ?? null;
         if (!$uid) return;
 

@@ -247,7 +247,12 @@ class CampaignController extends Controller
 
     public function retryFailedCalls(Campaign $campaign)
     {
-        $retryStatuses = ['failed', 'busy', 'not_answered'];
+        
+        $markAsSuccessful = ['attended', '1_pressed'];
+            CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $markAsSuccessful)->update(['status' => 'successful']);
+            
+        $retryStatuses = ['failed', 'busy', 'not_answered','calling_ringing','calling'];
         CampaignContact::where('campaign_id', $campaign->id)
             ->whereIn('status', $retryStatuses)->update(['status' => 'pending']);
 

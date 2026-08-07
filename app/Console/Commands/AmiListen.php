@@ -14,14 +14,14 @@ class AmiListen extends Command
 {
     public function handle(): int
     {
-        Log::info('AMI_LISTENER_COMMAND_STARTED');
+        // Log::info('AMI_LISTENER_COMMAND_STARTED');
         $this->info('Starting AMI Listener...');
 
         try {
-            Log::info('AMI_LISTENER_INITIALIZING');
+            // Log::info('AMI_LISTENER_INITIALIZING');
             $listener = app(AmiEventListener::class);
 
-            Log::info('AMI_LISTENER_CONNECTING');
+            // Log::info('AMI_LISTENER_CONNECTING');
             $this->info('AMI Listener Started');
 
             $listener->connect();

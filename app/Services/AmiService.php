@@ -59,7 +59,7 @@ class AmiService
 
             $this->connected = true;
 
-            Log::info('AMI Connected Successfully');
+            // Log::info('AMI Connected Successfully');
 
             return true;
 
@@ -415,8 +415,8 @@ class AmiService
      */
     public function getChannels(): array
     {
-        // return $this->command('core show channels');
-        return $this->command('queue show 6906');
+        return $this->command('core show channels');
+        // return $this->command('queue show 6906');
     }
 
   

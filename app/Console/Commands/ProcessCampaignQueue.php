@@ -34,11 +34,11 @@ class ProcessCampaignQueue extends Command
             ->whereIn('status', $specialStatuses)
             ->count();
 
-        Log::info('PROCESS_CAMPAIGN_QUEUE', [
-            'campaign_id' => $campaign->id,
-            'active_contacts' => $activeContactCount,
-            'no_of_calls' => $campaign->no_of_calls,
-        ]);
+        // Log::info('PROCESS_CAMPAIGN_QUEUE', [
+        //     'campaign_id' => $campaign->id,
+        //     'active_contacts' => $activeContactCount,
+        //     'no_of_calls' => $campaign->no_of_calls,
+        // ]);
 
         if ($activeContactCount >= $campaign->no_of_calls) {
             return;

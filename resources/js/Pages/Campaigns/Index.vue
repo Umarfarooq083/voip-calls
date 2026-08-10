@@ -337,11 +337,31 @@ const getStatusBadgeClass = (status) => {
                                         </svg>
                                         <!-- Start Calling -->
                                     </button>
+                                   
+                                  <button style="padding: 8px;"
+                                        v-if="campaign.status === 'paused'" 
+                                        @click="startCalling(campaign.id)" 
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-md hover:bg-green-700 transition-colors mr-2"
+                                        title="Resume Calls"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                            />
+                                        </svg>
+                                    </button>
 
                                     <button style="padding: 8px;"  v-if="campaign?.failed_calls || campaign.status === 'paused'"
                                         @click="retryFailedCalls(campaign.id)" 
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors mr-2"
-                                        title="Retry or resume calls"
+                                        title="Retry calls"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

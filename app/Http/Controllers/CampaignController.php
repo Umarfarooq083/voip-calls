@@ -214,6 +214,15 @@ class CampaignController extends Controller
 
     public function startCalling(Campaign $campaign)
     {
+
+       $markAsSuccessful = ['attended', '1_pressed'];
+            CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $markAsSuccessful)->update(['status' => 'successful']);
+            
+        $retryStatuses = ['calling_ringing','calling'];
+        CampaignContact::where('campaign_id', $campaign->id)
+            ->whereIn('status', $retryStatuses)->update(['status' => 'pending']);
+
         $campaign->update([
             'status' => 'in_progress',
             'started_at' => now(),
